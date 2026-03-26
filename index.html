@@ -4095,7 +4095,47 @@
                         </div>
                     </div>
                 ` : ''}
+
+                <div style="margin-top:20px;text-align:center;">
+                    <button class="btn" style="background:var(--accent-light);color:var(--accent);padding:12px 24px;font-size:14px;font-weight:600;" onclick="copyChannelAIAnalysis('${ch.id}', '${ch.title}', ${ch.subscriberCount}, ${Math.round(avgViews)}, ${avgContribution.toFixed(1)}, ${avgEngagement.toFixed(2)}, ${avgInterval > 0 ? avgInterval.toFixed(1) : 0}, '${best.snippet.title.replace(/'/g, "\\'")}', '${worst.snippet.title.replace(/'/g, "\\'")}', '${topTags.map(([t]) => t).join(", ")}')">
+                        🤖 채널 AI 분석용 복사
+                    </button>
+                </div>
             `;
+        }
+
+        function copyChannelAIAnalysis(id, title, subs, avgViews, contrib, engage, interval, bestTitle, worstTitle, tags) {
+            const prompt = `아래 유튜브 채널을 분석하고, 내 채널 전략에 적용할 수 있는 인사이트를 알려줘.
+
+## 채널 정보
+- 채널명: ${title}
+- 구독자: ${formatNumber(subs)}
+- 평균 조회수: ${formatNumber(avgViews)}
+- 평균 기여도: ${contrib}%
+- 평균 참여도: ${engage}%
+- 업로드 주기: ${interval > 0 ? interval + '일' : '정보 없음'}
+- 최고 성과 영상: ${bestTitle}
+- 최저 성과 영상: ${worstTitle}
+- 자주 쓰는 태그: ${tags}
+
+## 분석 요청
+1. 이 채널의 콘텐츠 전략 요약
+2. 성과 좋은 영상과 나쁜 영상의 차이점
+3. 이 채널의 강점과 약점
+4. 내 채널이 이 채널에서 배울 수 있는 것 3가지
+5. 이 채널과 경쟁한다면 차별화 전략`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                showModalToast('✅ 채널 AI 분석 프롬프트가 복사되었습니다!');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = prompt;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showModalToast('✅ 복사되었습니다!');
+            });
         }
 
         // 채널 비교 셀렉트 업데이트
