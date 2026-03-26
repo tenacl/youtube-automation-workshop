@@ -1,1 +1,4385 @@
-404: Not Found
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Analyzer - 유튜브 채널/영상 분석</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #242424;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-tertiary: #666666;
+            --accent: #FF0000;
+            --accent-hover: #CC0000;
+            --border: #333333;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+            --shadow: rgba(0, 0, 0, 0.5);
+            --badge-great: #10B981;
+            --badge-good: #3B82F6;
+            --badge-normal: #F59E0B;
+            --badge-bad: #EF4444;
+        }
+
+        body.light {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e0e0e0;
+            --text-primary: #0f0f0f;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border: #dddddd;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: var(--bg-secondary);
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+        }
+
+        .logo svg {
+            width: 32px;
+            height: 32px;
+            fill: var(--accent);
+        }
+
+        .api-key-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .api-key-toggle {
+            display: none;
+        }
+
+        .api-key-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-container.collapsed {
+            display: none;
+        }
+
+        .settings-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        .api-key-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 8px;
+            width: 250px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            background: var(--accent);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .theme-toggle {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            margin: 20px auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--bg-secondary);
+            z-index: 10;
+        }
+
+        .modal-close {
+            background: var(--bg-tertiary);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            color: var(--text-primary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--accent);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .video-player {
+            width: 100%;
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .video-player iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .video-detail-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .video-main-info h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .video-meta {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .video-description {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            white-space: pre-line;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .tags-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .tag {
+            background: var(--bg-tertiary);
+            padding: 5px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            border: 1px solid var(--border);
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+
+        .card-tag {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .card-tag-more {
+            font-size: 10px;
+            color: var(--text-tertiary);
+            padding: 2px 4px;
+            opacity: 0.6;
+        }
+
+        /* 키워드 분석 탭 */
+        .keyword-results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .keyword-results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .keyword-section {
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .keyword-section-header {
+            padding: 14px 18px;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .keyword-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .keyword-table th {
+            text-align: left;
+            padding: 10px 14px;
+            font-size: 11px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .keyword-table td {
+            padding: 10px 14px;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+
+        .keyword-table tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .keyword-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .kw-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        .kw-name:hover {
+            color: var(--accent);
+        }
+
+        .kw-score {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .kw-score-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--badge-great);
+        }
+
+        .kw-score-medium {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--badge-good);
+        }
+
+        .kw-score-low {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--badge-normal);
+        }
+
+        .kw-score-bad {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--badge-bad);
+        }
+
+        .kw-type {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            color: var(--text-tertiary);
+        }
+
+        .kw-copy-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .kw-copy-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .keyword-summary {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .keyword-summary-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px 16px;
+        }
+
+        .keyword-summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .keyword-summary-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .channel-info-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .channel-info-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .channel-info-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .channel-info-details h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+
+        .popular-videos-list {
+            margin-top: 15px;
+        }
+
+        .popular-video-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popular-video-item:hover {
+            background: var(--bg-primary);
+            transform: translateX(5px);
+        }
+
+        .popular-video-thumb {
+            width: 80px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .popular-video-info {
+            flex: 1;
+        }
+
+        .popular-video-title {
+            font-size: 12px;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .comments-section {
+            margin-top: 30px;
+        }
+
+        .comments-section h3 {
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        .comment-item {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .comment-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .comment-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+        }
+
+        .comment-author {
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .comment-date {
+            color: var(--text-tertiary);
+            font-size: 11px;
+        }
+
+        .comment-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-primary);
+        }
+
+        .comment-stats {
+            margin-top: 8px;
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn-collect {
+            background: var(--accent);
+            color: white;
+        }
+
+        .action-btn-collect:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .action-btn-collect.collected {
+            background: var(--success);
+        }
+
+        .action-btn-channel {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .action-btn-channel:hover {
+            background: var(--border);
+        }
+
+        .action-btn-youtube {
+            background: #FF0000;
+            color: white;
+        }
+
+        .action-btn-youtube:hover {
+            background: #CC0000;
+            transform: translateY(-2px);
+        }
+
+        .filter-bar {
+            background: var(--bg-tertiary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-group .filter-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            white-space: nowrap;
+            margin-right: 2px;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 3px;
+        }
+
+        .filter-chip {
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            transition: all 0.15s ease;
+            font-weight: 500;
+        }
+
+        .filter-chip:hover {
+            border-color: var(--accent);
+            color: var(--text-primary);
+            background: rgba(255,0,0,0.1);
+        }
+
+        .filter-chip.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            font-weight: 600;
+        }
+
+        .filter-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+        }
+
+        .filter-input {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-size: 12px;
+            width: 80px;
+        }
+
+        .badge-great {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--badge-great);
+            border: 1px solid var(--badge-great);
+        }
+
+        .badge-good {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--badge-good);
+            border: 1px solid var(--badge-good);
+        }
+
+        .badge-normal {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--badge-normal);
+            border: 1px solid var(--badge-normal);
+        }
+
+        .badge-bad {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--badge-bad);
+            border: 1px solid var(--badge-bad);
+        }
+
+        .api-quota {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            font-size: 12px;
+            position: relative;
+            cursor: help;
+        }
+
+        .api-quota:hover::after {
+            content: 'YouTube API 일일 무료 할당량';
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+
+        .quota-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--bg-primary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .quota-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+            transition: width 0.3s ease;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .sort-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sort-direction {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+        }
+
+        .sort-direction:hover {
+            background: var(--border);
+        }
+
+        .sort-direction.desc {
+            transform: rotate(180deg);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent);
+            box-shadow: 0 2px 8px rgba(255,0,0,0.5);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 채널 추적 탭 스타일 */
+        .tracking-section {
+            padding: 20px 0;
+        }
+
+        .tracking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tracking-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .last-check-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tracked-channels-section,
+        .new-videos-section,
+        .channel-report-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .tracked-channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .tracked-channel-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tracked-channel-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow);
+            border-color: var(--accent);
+        }
+
+        .tracked-channel-card.selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+        }
+
+        .tracked-channel-header {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .tracked-channel-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .tracked-channel-info {
+            flex: 1;
+        }
+
+        .tracked-channel-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .tracked-channel-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .tracked-channel-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+        }
+
+        .remove-channel-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .remove-channel-btn:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .new-videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .new-video-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .new-video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow);
+        }
+
+        .new-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--accent);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            z-index: 1;
+        }
+
+        .channel-report-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .report-stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .report-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .report-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .report-videos-section {
+            margin-bottom: 30px;
+        }
+
+        .report-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-primary);
+        }
+
+        .report-video-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .report-video-thumbnail {
+            width: 120px;
+            height: 67px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+
+        .report-video-details {
+            flex: 1;
+        }
+
+        .report-video-title {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+        }
+
+        .report-video-stats {
+            display: flex;
+            gap: 12px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .top-tags-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .top-tag-item {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: var(--text-primary);
+        }
+
+        .top-tag-count {
+            color: var(--text-secondary);
+            margin-left: 4px;
+        }
+
+        .btn-icon {
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .search-section {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .search-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 0, 0, 0.1);
+        }
+
+        .search-btn {
+            padding: 14px 30px;
+            font-size: 16px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 4px 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .video-card {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid var(--border);
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 16px 40px var(--shadow);
+            border-color: var(--accent);
+            background: rgba(255,0,0,0.05);
+        }
+
+        .video-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: var(--bg-tertiary);
+        }
+
+        .video-info {
+            padding: 15px;
+        }
+
+        .video-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--text-primary);
+        }
+
+        .video-channel {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .video-stats {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badges {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .badge-success {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(255, 193, 7, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
+        }
+
+        .badge-danger {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .table-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background: rgba(255,0,0,0.05);
+            box-shadow: 0 4px 12px var(--shadow);
+            transform: scale(1.02);
+            transition: all 0.2s ease;
+        }
+
+        .channel-header {
+            background: var(--bg-secondary);
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .channel-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--bg-tertiary);
+        }
+
+        .channel-details h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .channel-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .chart-container {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .chart {
+            height: 300px;
+            position: relative;
+        }
+
+        .collection-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            opacity: 0.4;
+        }
+
+        .empty-state h2 {
+            font-size: 24px;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .popular-keywords {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .keyword-btn {
+            padding: 10px 20px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 25px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .keyword-btn:hover {
+            background: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255,0,0,0.3);
+        }
+
+        .usage-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 800px;
+            margin: 40px auto 0;
+        }
+
+        .step-card {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .step-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .step-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--accent);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .collect-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .collect-btn:hover {
+            background: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .collect-btn.collected {
+            background: var(--success);
+        }
+
+        .thumbnail-wrapper {
+            position: relative;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .api-key-input {
+                width: 100%;
+            }
+
+            .search-wrapper {
+                flex-direction: column;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .channel-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .tabs {
+                justify-content: center;
+            }
+
+            .tab {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 2.19-.16 3.8-.44 4.83-.25.9-.83 1.48-1.73 1.73-.47.13-1.33.22-2.65.28-1.3.07-2.49.1-3.59.1L12 19c-4.19 0-6.8-.16-7.83-.44-.9-.25-1.48-.83-1.73-1.73-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-2.19.16-3.8.44-4.83.25-.9.83-1.48 1.73-1.73.47-.13 1.33-.22 2.65-.28 1.3-.07 2.49-.1 3.59-.1L12 5c4.19 0 6.8.16 7.83.44.9.25 1.48.83 1.73 1.73z"/>
+                    </svg>
+                    YouTube Analyzer
+                </div>
+                <div class="api-key-section">
+                    <div class="api-quota" id="apiQuota">
+                        <span>할당량: <span id="quotaUsed">0</span> / 10,000</span>
+                        <div class="quota-bar">
+                            <div class="quota-fill" id="quotaFill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <button class="settings-btn" onclick="toggleApiSection()" title="API 키 설정">⚙️</button>
+                    <div class="api-key-container" id="apiKeyContainer">
+                        <input type="password" class="api-key-input" id="apiKey" placeholder="YouTube API 키 입력">
+                        <button class="btn btn-secondary" onclick="saveApiKey()">API 키 저장</button>
+                    </div>
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('videos')">영상 찾기</button>
+            <button class="tab" onclick="switchTab('channel')">채널 분석</button>
+            <button class="tab" onclick="switchTab('channels')">채널 찾기</button>
+            <button class="tab" onclick="switchTab('keywords')">키워드 분석</button>
+            <button class="tab" onclick="switchTab('collection')">수집함</button>
+            <button class="tab" onclick="switchTab('tracking')">채널 추적</button>
+        </div>
+
+        <div id="videos-tab" class="tab-content active">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="videoSearchInput" placeholder="검색어를 입력하세요">
+                    <button class="search-btn btn" onclick="searchVideos()">검색</button>
+                </div>
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <span class="filter-label">기여도</span>
+                        <div class="filter-chips">
+                            <span class="filter-chip" data-filter="contribution" data-value="great" onclick="toggleFilter(this)">최고</span>
+                            <span class="filter-chip" data-filter="contribution" data-value="good" onclick="toggleFilter(this)">좋음</span>
+                            <span class="filter-chip" data-filter="contribution" data-value="normal" onclick="toggleFilter(this)">보통</span>
+                            <span class="filter-chip" data-filter="contribution" data-value="bad" onclick="toggleFilter(this)">낮음</span>
+                        </div>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">성과도</span>
+                        <div class="filter-chips">
+                            <span class="filter-chip" data-filter="performance" data-value="great" onclick="toggleFilter(this)">최고</span>
+                            <span class="filter-chip" data-filter="performance" data-value="good" onclick="toggleFilter(this)">좋음</span>
+                            <span class="filter-chip" data-filter="performance" data-value="normal" onclick="toggleFilter(this)">보통</span>
+                            <span class="filter-chip" data-filter="performance" data-value="bad" onclick="toggleFilter(this)">낮음</span>
+                        </div>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">노출</span>
+                        <div class="filter-chips">
+                            <span class="filter-chip" data-filter="exposure" data-value="great" onclick="toggleFilter(this)">최고</span>
+                            <span class="filter-chip" data-filter="exposure" data-value="good" onclick="toggleFilter(this)">좋음</span>
+                            <span class="filter-chip" data-filter="exposure" data-value="normal" onclick="toggleFilter(this)">보통</span>
+                            <span class="filter-chip" data-filter="exposure" data-value="bad" onclick="toggleFilter(this)">낮음</span>
+                        </div>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">숏츠</span>
+                        <div class="filter-chips">
+                            <span class="filter-chip" data-filter="shorts" data-value="include" onclick="toggleFilter(this)">포함</span>
+                            <span class="filter-chip" data-filter="shorts" data-value="exclude" onclick="toggleFilter(this)">제외</span>
+                        </div>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">조회수</span>
+                        <input type="number" class="filter-input" id="minViews" placeholder="0" onchange="applyFilters()">
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">기간</span>
+                        <select class="filter-select" id="dateFilter" onchange="applyFilters()">
+                            <option value="all">전체</option>
+                            <option value="week">1주</option>
+                            <option value="month">1개월</option>
+                            <option value="3months">3개월</option>
+                            <option value="6months">6개월</option>
+                            <option value="year">1년</option>
+                        </select>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">정렬</span>
+                        <div class="sort-controls">
+                            <select class="sort-select" id="sortBy" onchange="applySort()">
+                                <option value="relevance">관련성</option>
+                                <option value="viewCount">조회수</option>
+                                <option value="date">게시일</option>
+                                <option value="subscriberCount">구독자수</option>
+                                <option value="contribution">기여도</option>
+                                <option value="performance">성과도</option>
+                                <option value="exposure">노출확률</option>
+                            </select>
+                            <button class="sort-direction" id="sortDirection" onclick="toggleSortDirection()">↓</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="videoResults">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15.5,14h-0.79l-0.28-0.27C15.41,12.59,16,11.11,16,9.5C16,5.91,13.09,3,9.5,3S3,5.91,3,9.5S5.91,16,9.5,16 c1.61,0,3.09-0.59,4.23-1.57l0.27,0.28v0.79l5,4.99L20.49,19L15.5,14z M9.5,14C7.01,14,5,11.99,5,9.5S7.01,5,9.5,5S14,7.01,14,9.5 S11.99,14,9.5,14z"/>
+                    </svg>
+                    <h2>키워드를 검색해보세요</h2>
+                    <p>YouTube에서 원하는 주제의 영상들을 찾아보세요</p>
+                    <div class="popular-keywords">
+                        <button class="keyword-btn" onclick="searchWithKeyword('다이어트')">다이어트</button>
+                        <button class="keyword-btn" onclick="searchWithKeyword('영어회화')">영어회화</button>
+                        <button class="keyword-btn" onclick="searchWithKeyword('요리')">요리</button>
+                        <button class="keyword-btn" onclick="searchWithKeyword('브이로그')">브이로그</button>
+                        <button class="keyword-btn" onclick="searchWithKeyword('쇼핑몰')">쇼핑몰</button>
+                    </div>
+                    <div class="usage-steps">
+                        <div class="step-card">
+                            <div class="step-number">1</div>
+                            <div class="step-title">검색</div>
+                            <div class="step-desc">원하는 키워드로 YouTube 영상을 검색합니다</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">2</div>
+                            <div class="step-title">필터링</div>
+                            <div class="step-desc">성과도, 기여도 등으로 영상을 필터링합니다</div>
+                        </div>
+                        <div class="step-card">
+                            <div class="step-number">3</div>
+                            <div class="step-title">수집</div>
+                            <div class="step-desc">마음에 드는 영상을 수집함에 저장합니다</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="channel-tab" class="tab-content">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="channelInput" placeholder="채널 URL 또는 채널명 입력">
+                    <button class="search-btn btn" onclick="analyzeChannel()">분석</button>
+                </div>
+            </div>
+            <div id="channelResults"></div>
+        </div>
+
+        <div id="channels-tab" class="tab-content">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="channelSearchInput" placeholder="검색어를 입력하세요">
+                    <button class="search-btn btn" onclick="searchChannels()">검색</button>
+                </div>
+            </div>
+            <div id="channelsResults"></div>
+        </div>
+
+        <div id="keywords-tab" class="tab-content">
+            <div class="search-section">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="keywordInput" placeholder="주제나 키워드를 입력하세요 (예: 다이어트, 쇼핑몰 창업)">
+                    <button class="search-btn btn" onclick="generateKeywords()">키워드 생성</button>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-size: 12px; color: var(--text-secondary);">인기 주제:</span>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('다이어트')">다이어트</button>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('쇼핑몰 창업')">쇼핑몰 창업</button>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('영어회화')">영어회화</button>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('브이로그')">브이로그</button>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('주식 투자')">주식 투자</button>
+                    <button class="keyword-btn" onclick="generateKeywordsFor('요리 레시피')">요리 레시피</button>
+                </div>
+            </div>
+            <div id="keywordResults">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm-1-4h2v2h-2zm0-2h2V7h-2z"/>
+                    </svg>
+                    <h2>키워드를 생성해보세요</h2>
+                    <p>주제를 입력하면 YouTube에서 검색량 높은 연관 키워드와<br>상위 영상의 태그를 분석해서 추천합니다</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="collection-tab" class="tab-content">
+            <div class="collection-actions">
+                <button class="btn" onclick="createFolder()">폴더 생성</button>
+                <select class="filter-select" id="folderSelect" onchange="filterByFolder()">
+                    <option value="all">전체</option>
+                </select>
+                <button class="btn btn-secondary" onclick="clearCollection()">전체 삭제</button>
+                <button class="btn" onclick="exportToCSV()">CSV 내보내기</button>
+            </div>
+            <div id="collectionResults"></div>
+        </div>
+
+        <div id="tracking-tab" class="tab-content">
+            <div class="tracking-section">
+                <div class="tracking-header">
+                    <div class="search-wrapper">
+                        <input type="text" class="search-input" id="trackingChannelInput" placeholder="채널 URL, @핸들 또는 채널 ID 입력">
+                        <button class="search-btn btn" onclick="addTrackedChannel()">채널 등록</button>
+                    </div>
+                    <div class="tracking-actions">
+                        <button class="btn" onclick="checkNewVideos()">
+                            <span class="btn-icon">🔄</span> 새 영상 확인
+                        </button>
+                        <span class="last-check-time" id="lastCheckTime">마지막 확인: -</span>
+                    </div>
+                </div>
+
+                <div class="tracked-channels-section">
+                    <h3 class="section-title">등록된 채널</h3>
+                    <div id="trackedChannelsList" class="tracked-channels-grid"></div>
+                </div>
+
+                <div class="new-videos-section" id="newVideosSection" style="display: none;">
+                    <h3 class="section-title">최근 영상</h3>
+                    <div id="newVideosList"></div>
+                </div>
+
+                <div class="channel-report-section" id="channelReportSection" style="display: none;">
+                    <h3 class="section-title">채널 리포트</h3>
+                    <div id="channelReportContent"></div>
+                </div>
+
+                <div class="channel-report-section" id="channelCompareSection" style="display: none;">
+                    <h3 class="section-title">📊 채널 비교</h3>
+                    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+                        <select id="compareChannelA" style="flex:1;min-width:150px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;">
+                            <option value="">채널 A 선택</option>
+                        </select>
+                        <span style="display:flex;align-items:center;font-weight:700;color:var(--text-secondary);">VS</span>
+                        <select id="compareChannelB" style="flex:1;min-width:150px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-primary);font-size:13px;">
+                            <option value="">채널 B 선택</option>
+                        </select>
+                        <button class="btn" onclick="compareChannels()">비교하기</button>
+                    </div>
+                    <div id="channelCompareContent"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 비디오 상세 모달 -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">영상 제목</h2>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 동적으로 채워짐 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let API_KEY = '';
+        let collection = [];
+        let folders = [];
+        let allVideos = [];
+        let filteredVideos = [];
+        let cachedSearches = {};
+        let apiUsage = 0;
+        let currentVideo = null;
+        let currentFilters = {
+            contribution: [],
+            performance: [],
+            exposure: [],
+            shorts: '',
+            minViews: 0,
+            dateFilter: 'all',
+            sortBy: 'relevance',
+            sortDirection: 'desc'
+        };
+
+        // 초기화
+        window.onload = function() {
+            API_KEY = localStorage.getItem('youtube_api_key') || '';
+            document.getElementById('apiKey').value = API_KEY;
+
+            collection = JSON.parse(localStorage.getItem('video_collection') || '[]');
+            folders = JSON.parse(localStorage.getItem('video_folders') || '[]');
+
+            // API 사용량 복원 (오늘자)
+            const today = new Date().toDateString();
+            const savedUsage = JSON.parse(localStorage.getItem('api_usage') || '{}');
+            if (savedUsage.date === today) {
+                apiUsage = savedUsage.count || 0;
+                updateQuotaDisplay();
+            } else {
+                localStorage.setItem('api_usage', JSON.stringify({ date: today, count: 0 }));
+            }
+
+            // 캐시 정리 (24시간 이상 된 것)
+            const cachedData = JSON.parse(localStorage.getItem('cached_searches') || '{}');
+            const now = Date.now();
+            Object.keys(cachedData).forEach(key => {
+                if (now - cachedData[key].timestamp > 24 * 60 * 60 * 1000) {
+                    delete cachedData[key];
+                }
+            });
+            localStorage.setItem('cached_searches', JSON.stringify(cachedData));
+            cachedSearches = cachedData;
+
+            // 테마 복원
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light');
+            }
+
+            // 폴더 목록 업데이트
+            updateFolderSelect();
+
+            // API 키 섹션 초기 상태 (숨김)
+            if (API_KEY) {
+                document.getElementById('apiKeyContainer').classList.add('collapsed');
+            }
+
+            // ESC 키로 모달 닫기
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+                if (e.key === 'Enter') {
+                    if (document.activeElement.id === 'videoSearchInput') searchVideos();
+                    if (document.activeElement.id === 'channelInput') analyzeChannel();
+                    if (document.activeElement.id === 'channelSearchInput') searchChannels();
+                    if (document.activeElement.id === 'keywordInput') generateKeywords();
+                }
+            });
+
+            // 모달 외부 클릭으로 닫기
+            document.getElementById('videoModal').addEventListener('click', (e) => {
+                if (e.target.id === 'videoModal') {
+                    closeModal();
+                }
+            });
+        };
+
+        // API 키 저장
+        function saveApiKey() {
+            API_KEY = document.getElementById('apiKey').value;
+            localStorage.setItem('youtube_api_key', API_KEY);
+            showMessage('API 키가 저장되었습니다.', 'success');
+        }
+
+        // API 키 섹션 토글
+        function toggleApiSection() {
+            const container = document.getElementById('apiKeyContainer');
+            container.classList.toggle('collapsed');
+        }
+
+        // 키워드로 검색
+        function searchWithKeyword(keyword) {
+            document.getElementById('videoSearchInput').value = keyword;
+            searchVideos();
+        }
+
+        // 테마 토글
+        function toggleTheme() {
+            document.body.classList.toggle('light');
+            const theme = document.body.classList.contains('light') ? 'light' : 'dark';
+            localStorage.setItem('theme', theme);
+        }
+
+        // 탭 전환
+        function switchTab(tabName) {
+            // 모든 탭과 콘텐츠 비활성화
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            // 선택된 탭 활성화
+            event.target.classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            // 수집함 탭이면 목록 갱신
+            if (tabName === 'collection') {
+                displayCollection();
+            }
+        }
+
+        // 메시지 표시
+        function showMessage(message, type = 'error') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+            messageDiv.textContent = message;
+
+            const firstTabContent = document.querySelector('.tab-content.active');
+            firstTabContent.insertBefore(messageDiv, firstTabContent.firstChild);
+
+            setTimeout(() => messageDiv.remove(), 5000);
+        }
+
+        // YouTube API 호출 (할당량 추적 포함)
+        async function callYouTubeAPI(endpoint, params) {
+            if (!API_KEY) {
+                showMessage('API 키를 먼저 입력해주세요.');
+                return null;
+            }
+
+            // API 할당량 체크
+            if (apiUsage >= 10000) {
+                showMessage('API 할당량을 초과했습니다. 내일 다시 시도해주세요.');
+                return null;
+            }
+
+            const url = new URL(`https://www.googleapis.com/youtube/v3/${endpoint}`);
+            params.key = API_KEY;
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`API 오류: ${response.status}`);
+                }
+
+                // API 사용량 업데이트 (엔드포인트별 비용 계산)
+                let cost = 1;
+                if (endpoint === 'search') cost = 100;
+                else if (endpoint === 'videos') cost = 1;
+                else if (endpoint === 'channels') cost = 1;
+                else if (endpoint === 'commentThreads') cost = 1;
+
+                apiUsage += cost;
+                updateQuotaDisplay();
+                saveApiUsage();
+
+                return await response.json();
+            } catch (error) {
+                showMessage(`API 호출 실패: ${error.message}`);
+                return null;
+            }
+        }
+
+        // API 사용량 저장
+        function saveApiUsage() {
+            const today = new Date().toDateString();
+            localStorage.setItem('api_usage', JSON.stringify({ date: today, count: apiUsage }));
+        }
+
+        // API 할당량 표시 업데이트
+        function updateQuotaDisplay() {
+            document.getElementById('quotaUsed').textContent = apiUsage;
+            const percentage = (apiUsage / 10000) * 100;
+            document.getElementById('quotaFill').style.width = Math.min(100, percentage) + '%';
+
+            // 색상 변경
+            const quotaFill = document.getElementById('quotaFill');
+            if (percentage >= 90) {
+                quotaFill.style.background = 'var(--danger)';
+            } else if (percentage >= 70) {
+                quotaFill.style.background = 'var(--warning)';
+            } else {
+                quotaFill.style.background = 'var(--success)';
+            }
+        }
+
+        // 숫자 포맷팅
+        function formatNumber(num) {
+            if (!num) return '0';
+            num = parseInt(num);
+            if (num >= 100000000) return Math.floor(num / 100000000) + '억';
+            if (num >= 10000000) return Math.floor(num / 10000000) + '천만';
+            if (num >= 10000) return Math.floor(num / 10000) + '만';
+            if (num >= 1000) return Math.floor(num / 1000) + '천';
+            return num.toString();
+        }
+
+        // 날짜 포맷팅
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            if (days === 0) return '오늘';
+            if (days === 1) return '어제';
+            if (days < 7) return `${days}일 전`;
+            if (days < 30) return `${Math.floor(days / 7)}주 전`;
+            if (days < 365) return `${Math.floor(days / 30)}개월 전`;
+            return `${Math.floor(days / 365)}년 전`;
+        }
+
+        // 노출확률 계산 (개선된 버전)
+        function calculateExposureProbability(viewCount, publishedAt, allVideos = []) {
+            const days = Math.max(1, (new Date() - new Date(publishedAt)) / (1000 * 60 * 60 * 24));
+            const dailyViews = viewCount / days;
+
+            // 최근성 가중치
+            let weight = 1;
+            if (days <= 30) weight = 2;
+            else if (days <= 90) weight = 1.5;
+            else if (days <= 365) weight = 1;
+            else weight = 0.8;
+
+            const score = dailyViews * weight;
+
+            // 상대 평가 (검색 결과 내에서)
+            if (allVideos.length > 0) {
+                const scores = allVideos.map(v => {
+                    const d = Math.max(1, (new Date() - new Date(v.publishedAt)) / (1000 * 60 * 60 * 24));
+                    const dv = v.viewCount / d;
+                    let w = 1;
+                    if (d <= 30) w = 2;
+                    else if (d <= 90) w = 1.5;
+                    else if (d <= 365) w = 1;
+                    else w = 0.8;
+                    return dv * w;
+                }).sort((a, b) => b - a);
+
+                const rank = scores.indexOf(score);
+                const percentile = rank / scores.length;
+
+                if (percentile <= 0.2) return { value: 'great', label: '최고' };
+                if (percentile <= 0.5) return { value: 'good', label: '좋음' };
+                if (percentile <= 0.8) return { value: 'normal', label: '보통' };
+                return { value: 'bad', label: '낮음' };
+            }
+
+            // 절대 평가 (단독 평가 시)
+            if (score > 20000) return { value: 'great', label: '최고' };
+            if (score > 10000) return { value: 'good', label: '좋음' };
+            if (score > 1000) return { value: 'normal', label: '보통' };
+            return { value: 'bad', label: '낮음' };
+        }
+
+        // 기여도 계산 (개선된 버전)
+        function calculateContribution(videoViews, avgViews) {
+            if (!avgViews || avgViews === 0) return { value: 'normal', label: '보통' };
+            const ratio = (videoViews / avgViews) * 100;
+
+            if (ratio >= 200) return { value: 'great', label: '최고' };
+            if (ratio >= 100) return { value: 'good', label: '좋음' };
+            if (ratio >= 50) return { value: 'normal', label: '보통' };
+            return { value: 'bad', label: '낮음' };
+        }
+
+        // 성과도 계산 (신규)
+        function calculatePerformance(viewCount, subscriberCount) {
+            if (!subscriberCount || subscriberCount === 0) return { value: 'normal', label: '보통' };
+            const ratio = (viewCount / subscriberCount) * 100;
+
+            if (ratio >= 100) return { value: 'great', label: '최고' };
+            if (ratio >= 30) return { value: 'good', label: '좋음' };
+            if (ratio >= 10) return { value: 'normal', label: '보통' };
+            return { value: 'bad', label: '낮음' };
+        }
+
+        // 영상 검색
+        async function searchVideos() {
+            const query = document.getElementById('videoSearchInput').value;
+            if (!query) {
+                showMessage('검색어를 입력해주세요.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('videoResults');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>검색 중...</div>';
+
+            // order와 videoDuration을 relevance와 any로 기본값 설정
+            const order = 'relevance';
+            const videoDuration = 'any';
+
+            const searchData = await callYouTubeAPI('search', {
+                q: query,
+                part: 'snippet',
+                type: 'video',
+                maxResults: 20,
+                order: order,
+                videoDuration: videoDuration
+            });
+
+            if (!searchData || !searchData.items) {
+                resultsDiv.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            // 비디오 ID들로 상세 정보 가져오기
+            const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+            const videoData = await callYouTubeAPI('videos', {
+                id: videoIds,
+                part: 'snippet,statistics,contentDetails'
+            });
+
+            // 채널 ID들로 채널 정보 가져오기
+            const channelIds = [...new Set(searchData.items.map(item => item.snippet.channelId))].join(',');
+            const channelData = await callYouTubeAPI('channels', {
+                id: channelIds,
+                part: 'statistics'
+            });
+
+            const channels = {};
+            if (channelData && channelData.items) {
+                channelData.items.forEach(channel => {
+                    channels[channel.id] = channel;
+                });
+            }
+
+            // 결과 표시
+            displayVideoResults(searchData.items, videoData?.items || [], channels);
+        }
+
+        // 영상 결과 표시 (개선된 버전)
+        function displayVideoResults(searchItems, videoItems, channels) {
+            const resultsDiv = document.getElementById('videoResults');
+
+            // videoItems를 ID로 매핑 (순서가 다를 수 있음)
+            const videoMap = {};
+            videoItems.forEach(v => { videoMap[v.id] = v; });
+
+            const videos = searchItems.map((item, index) => {
+                const videoDetail = videoMap[item.id.videoId] || {};
+                const channel = channels[item.snippet.channelId] || {};
+                const channelStats = channel.statistics || {};
+
+                return {
+                    id: item.id.videoId,
+                    title: item.snippet.title,
+                    description: videoDetail.snippet?.description || item.snippet.description,
+                    thumbnail: item.snippet.thumbnails.medium.url,
+                    channelTitle: item.snippet.channelTitle,
+                    channelId: item.snippet.channelId,
+                    channelThumbnail: channel.snippet?.thumbnails?.default?.url || '',
+                    publishedAt: item.snippet.publishedAt,
+                    viewCount: parseInt(videoDetail.statistics?.viewCount || 0),
+                    likeCount: parseInt(videoDetail.statistics?.likeCount || 0),
+                    commentCount: parseInt(videoDetail.statistics?.commentCount || 0),
+                    duration: videoDetail.contentDetails?.duration || '',
+                    subscriberCount: parseInt(channelStats.subscriberCount || 0),
+                    avgViews: channelStats.videoCount ? Math.round(channelStats.viewCount / channelStats.videoCount) : 0,
+                    videoCount: parseInt(channelStats.videoCount || 0),
+                    tags: videoDetail.snippet?.tags || []
+                };
+            });
+
+            allVideos = videos;
+            applyFiltersAndSort();
+        }
+
+        // 필터와 정렬 적용
+        function applyFiltersAndSort() {
+            filteredVideos = [...allVideos];
+
+            // 필터 적용
+            filteredVideos = filteredVideos.filter(video => {
+                const exposure = calculateExposureProbability(video.viewCount, video.publishedAt, allVideos);
+                const contribution = calculateContribution(video.viewCount, video.avgViews);
+                const performance = calculatePerformance(video.viewCount, video.subscriberCount);
+
+                // 기여도 필터
+                if (currentFilters.contribution.length > 0 &&
+                    !currentFilters.contribution.includes(contribution.value)) {
+                    return false;
+                }
+
+                // 성과도 필터
+                if (currentFilters.performance.length > 0 &&
+                    !currentFilters.performance.includes(performance.value)) {
+                    return false;
+                }
+
+                // 노출확률 필터
+                if (currentFilters.exposure.length > 0 &&
+                    !currentFilters.exposure.includes(exposure.value)) {
+                    return false;
+                }
+
+                // Shorts 필터 (60초 이하)
+                const durationMatch = video.duration.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+                const seconds = (parseInt(durationMatch?.[1] || 0) * 60) + parseInt(durationMatch?.[2] || 0);
+                const isShorts = seconds <= 60;
+
+                if (currentFilters.shorts === 'exclude' && isShorts) return false;
+                if (currentFilters.shorts === 'include' && !isShorts) return false;
+
+                // 최소 조회수
+                if (video.viewCount < currentFilters.minViews) return false;
+
+                // 기간 필터
+                const publishDate = new Date(video.publishedAt);
+                const now = new Date();
+                const daysDiff = (now - publishDate) / (1000 * 60 * 60 * 24);
+
+                switch (currentFilters.dateFilter) {
+                    case 'week': if (daysDiff > 7) return false; break;
+                    case 'month': if (daysDiff > 30) return false; break;
+                    case '3months': if (daysDiff > 90) return false; break;
+                    case '6months': if (daysDiff > 180) return false; break;
+                    case 'year': if (daysDiff > 365) return false; break;
+                }
+
+                return true;
+            });
+
+            // 정렬 적용
+            filteredVideos.sort((a, b) => {
+                let compareValue = 0;
+
+                switch (currentFilters.sortBy) {
+                    case 'viewCount':
+                        compareValue = a.viewCount - b.viewCount;
+                        break;
+                    case 'date':
+                        compareValue = new Date(a.publishedAt) - new Date(b.publishedAt);
+                        break;
+                    case 'subscriberCount':
+                        compareValue = a.subscriberCount - b.subscriberCount;
+                        break;
+                    case 'contribution':
+                        const contribA = a.viewCount / (a.avgViews || 1);
+                        const contribB = b.viewCount / (b.avgViews || 1);
+                        compareValue = contribA - contribB;
+                        break;
+                    case 'performance':
+                        const perfA = a.viewCount / (a.subscriberCount || 1);
+                        const perfB = b.viewCount / (b.subscriberCount || 1);
+                        compareValue = perfA - perfB;
+                        break;
+                    case 'exposure':
+                        const exposureA = calculateExposureScore(a.viewCount, a.publishedAt);
+                        const exposureB = calculateExposureScore(b.viewCount, b.publishedAt);
+                        compareValue = exposureA - exposureB;
+                        break;
+                    default: // relevance
+                        return 0;
+                }
+
+                return currentFilters.sortDirection === 'desc' ? -compareValue : compareValue;
+            });
+
+            renderFilteredVideos();
+        }
+
+        // 노출 점수 계산 (정렬용)
+        function calculateExposureScore(viewCount, publishedAt) {
+            const days = Math.max(1, (new Date() - new Date(publishedAt)) / (1000 * 60 * 60 * 24));
+            const dailyViews = viewCount / days;
+            let weight = 1;
+            if (days <= 30) weight = 2;
+            else if (days <= 90) weight = 1.5;
+            else if (days <= 365) weight = 1;
+            else weight = 0.8;
+            return dailyViews * weight;
+        }
+
+        // 필터링된 비디오 렌더링
+        function renderFilteredVideos() {
+            const resultsDiv = document.getElementById('videoResults');
+
+            if (filteredVideos.length === 0) {
+                resultsDiv.innerHTML = '<div class="empty-state">필터 조건에 맞는 영상이 없습니다.</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="results-grid">
+                    ${filteredVideos.map(video => {
+                        const exposure = calculateExposureProbability(video.viewCount, video.publishedAt, allVideos);
+                        const contribution = calculateContribution(video.viewCount, video.avgViews);
+                        const performance = calculatePerformance(video.viewCount, video.subscriberCount);
+                        const isCollected = collection.some(v => v.id === video.id);
+
+                        // Duration to check if Shorts
+                        const durationMatch = video.duration.match(/PT(?:(\d+)M)?(?:(\d+)S)?/);
+                        const seconds = (parseInt(durationMatch?.[1] || 0) * 60) + parseInt(durationMatch?.[2] || 0);
+                        const isShorts = seconds <= 60;
+
+                        return `
+                            <div class="video-card" onclick="openVideoModal('${video.id}')">
+                                <div class="thumbnail-wrapper">
+                                    <img src="${video.thumbnail}" alt="${video.title}" class="video-thumbnail">
+                                    <button class="collect-btn ${isCollected ? 'collected' : ''}"
+                                            onclick="event.stopPropagation(); toggleCollection('${video.id}', this)"
+                                            data-video='${JSON.stringify(video).replace(/'/g, "&apos;")}'>
+                                        ${isCollected ? '✓' : '★'}
+                                    </button>
+                                    ${isShorts ? '<span style="position: absolute; bottom: 5px; right: 5px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">숏츠</span>' : ''}
+                                </div>
+                                <div class="video-info">
+                                    <div class="video-title">${video.title}</div>
+                                    <div class="video-channel">${video.channelTitle} • ${formatNumber(video.subscriberCount)} 구독자</div>
+                                    <div class="video-stats">
+                                        <span class="stat-item">👁 ${formatNumber(video.viewCount)}</span>
+                                        <span class="stat-item">👍 ${formatNumber(video.likeCount)}</span>
+                                        <span class="stat-item">💬 ${formatNumber(video.commentCount)}</span>
+                                    </div>
+                                    <div class="video-stats">
+                                        <span class="stat-item">${formatDate(video.publishedAt)}</span>
+                                    </div>
+                                    <div class="badges">
+                                        <span class="badge badge-${exposure.value}">
+                                            노출 ${exposure.label}
+                                        </span>
+                                        <span class="badge badge-${contribution.value}">
+                                            기여도 ${contribution.label}
+                                        </span>
+                                        <span class="badge badge-${performance.value}">
+                                            성과도 ${performance.label}
+                                        </span>
+                                    </div>
+                                    ${video.tags?.length ? `
+                                    <div class="card-tags">
+                                        ${video.tags.slice(0, 3).map(tag => `<span class="card-tag">#${tag}</span>`).join('')}
+                                        ${video.tags.length > 3 ? `<span class="card-tag-more">+${video.tags.length - 3}</span>` : ''}
+                                    </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // 채널 분석
+        async function analyzeChannel() {
+            const input = document.getElementById('channelInput').value.trim();
+            if (!input) {
+                showMessage('채널 URL 또는 채널명을 입력해주세요.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('channelResults');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>분석 중...</div>';
+
+            let channelId = '';
+
+            // URL에서 채널 ID 추출
+            if (input.includes('youtube.com')) {
+                const match = input.match(/channel\/([\w-]+)/);
+                if (match) {
+                    channelId = match[1];
+                } else {
+                    // 사용자명으로 검색
+                    const username = input.match(/@?([\w-]+)/)?.[1];
+                    if (username) {
+                        const searchResult = await callYouTubeAPI('search', {
+                            q: username,
+                            type: 'channel',
+                            part: 'snippet',
+                            maxResults: 1
+                        });
+                        if (searchResult?.items?.length > 0) {
+                            channelId = searchResult.items[0].snippet.channelId;
+                        }
+                    }
+                }
+            } else {
+                // 채널명으로 검색
+                const searchResult = await callYouTubeAPI('search', {
+                    q: input,
+                    type: 'channel',
+                    part: 'snippet',
+                    maxResults: 1
+                });
+                if (searchResult?.items?.length > 0) {
+                    channelId = searchResult.items[0].snippet.channelId;
+                }
+            }
+
+            if (!channelId) {
+                resultsDiv.innerHTML = '<div class="empty-state">채널을 찾을 수 없습니다.</div>';
+                return;
+            }
+
+            // 채널 정보 가져오기
+            const channelData = await callYouTubeAPI('channels', {
+                id: channelId,
+                part: 'snippet,statistics,brandingSettings'
+            });
+
+            if (!channelData?.items?.length) {
+                resultsDiv.innerHTML = '<div class="empty-state">채널 정보를 가져올 수 없습니다.</div>';
+                return;
+            }
+
+            const channel = channelData.items[0];
+
+            // 최근 영상 가져오기
+            const videosData = await callYouTubeAPI('search', {
+                channelId: channelId,
+                part: 'snippet',
+                order: 'date',
+                type: 'video',
+                maxResults: 10
+            });
+
+            let recentVideos = [];
+            if (videosData?.items?.length > 0) {
+                const videoIds = videosData.items.map(item => item.id.videoId).join(',');
+                const videoDetails = await callYouTubeAPI('videos', {
+                    id: videoIds,
+                    part: 'statistics,contentDetails'
+                });
+
+                recentVideos = videosData.items.map((item, index) => ({
+                    ...item,
+                    statistics: videoDetails?.items?.[index]?.statistics || {},
+                    contentDetails: videoDetails?.items?.[index]?.contentDetails || {}
+                }));
+            }
+
+            // 인기 영상 가져오기
+            const popularVideosData = await callYouTubeAPI('search', {
+                channelId: channelId,
+                part: 'snippet',
+                order: 'viewCount',
+                type: 'video',
+                maxResults: 5
+            });
+
+            let popularVideos = [];
+            if (popularVideosData?.items?.length > 0) {
+                const videoIds = popularVideosData.items.map(item => item.id.videoId).join(',');
+                const videoDetails = await callYouTubeAPI('videos', {
+                    id: videoIds,
+                    part: 'statistics'
+                });
+
+                popularVideos = popularVideosData.items.map((item, index) => ({
+                    ...item,
+                    statistics: videoDetails?.items?.[index]?.statistics || {}
+                }));
+            }
+
+            displayChannelAnalysis(channel, recentVideos, popularVideos);
+        }
+
+        // 채널 분석 결과 표시
+        function displayChannelAnalysis(channel, recentVideos, popularVideos) {
+            const resultsDiv = document.getElementById('channelResults');
+            const channelStats = channel.statistics;
+            const channelSnippet = channel.snippet;
+
+            // 업로드 빈도 계산
+            const uploadFrequency = recentVideos.length > 1 ? calculateUploadFrequency(recentVideos) : 'N/A';
+
+            // 평균 조회수 계산
+            const avgViews = calculateAverageViews(recentVideos);
+
+            // 성장률 계산
+            const growthRate = calculateGrowthRate(recentVideos);
+
+            resultsDiv.innerHTML = `
+                <div class="channel-header">
+                    <img src="${channelSnippet.thumbnails.high.url}" alt="${channelSnippet.title}" class="channel-avatar">
+                    <div class="channel-details">
+                        <h2>${channelSnippet.title}</h2>
+                        <p style="color: var(--text-secondary); margin-bottom: 10px;">${channelSnippet.description?.substring(0, 200)}...</p>
+                        <div class="channel-stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-value">${formatNumber(channelStats.subscriberCount)}</div>
+                                <div class="stat-label">구독자</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${formatNumber(channelStats.viewCount)}</div>
+                                <div class="stat-label">총 조회수</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${formatNumber(channelStats.videoCount)}</div>
+                                <div class="stat-label">영상수</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${uploadFrequency}</div>
+                                <div class="stat-label">업로드 주기</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3 class="chart-title">최근 영상 조회수 추이</h3>
+                    <div class="chart">${createViewsChart(recentVideos)}</div>
+                </div>
+
+                <div class="table-container">
+                    <h3 style="padding: 20px 20px 0;">최근 업로드 영상</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>제목</th>
+                                <th>게시일</th>
+                                <th>조회수</th>
+                                <th>좋아요</th>
+                                <th>댓글</th>
+                                <th>성과</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${recentVideos.map(video => {
+                                const performance = getVideoPerformance(video.statistics.viewCount, avgViews);
+                                return `
+                                    <tr onclick="window.open('https://youtube.com/watch?v=${video.id.videoId}', '_blank')" style="cursor: pointer;">
+                                        <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            ${video.snippet.title}
+                                        </td>
+                                        <td>${formatDate(video.snippet.publishedAt)}</td>
+                                        <td>${formatNumber(video.statistics.viewCount)}</td>
+                                        <td>${formatNumber(video.statistics.likeCount)}</td>
+                                        <td>${formatNumber(video.statistics.commentCount)}</td>
+                                        <td>
+                                            <span class="badge badge-${performance.class}">
+                                                ${performance.label}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="table-container">
+                    <h3 style="padding: 20px 20px 0;">인기 영상 TOP 5</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>순위</th>
+                                <th>제목</th>
+                                <th>조회수</th>
+                                <th>게시일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${popularVideos.map((video, index) => `
+                                <tr onclick="window.open('https://youtube.com/watch?v=${video.id.videoId}', '_blank')" style="cursor: pointer;">
+                                    <td>${index + 1}</td>
+                                    <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        ${video.snippet.title}
+                                    </td>
+                                    <td>${formatNumber(video.statistics.viewCount)}</td>
+                                    <td>${formatDate(video.snippet.publishedAt)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 업로드 빈도 계산
+        function calculateUploadFrequency(videos) {
+            if (videos.length < 2) return 'N/A';
+
+            const dates = videos.map(v => new Date(v.snippet.publishedAt)).sort((a, b) => b - a);
+            let totalDays = 0;
+
+            for (let i = 0; i < dates.length - 1; i++) {
+                totalDays += (dates[i] - dates[i + 1]) / (1000 * 60 * 60 * 24);
+            }
+
+            const avgDays = Math.round(totalDays / (dates.length - 1));
+
+            if (avgDays <= 1) return '매일';
+            if (avgDays <= 3) return '2-3일';
+            if (avgDays <= 7) return '주 1회';
+            if (avgDays <= 14) return '2주 1회';
+            if (avgDays <= 30) return '월 1회';
+            return '월 1회 미만';
+        }
+
+        // 평균 조회수 계산
+        function calculateAverageViews(videos) {
+            if (!videos.length) return 0;
+            const total = videos.reduce((sum, v) => sum + parseInt(v.statistics.viewCount || 0), 0);
+            return total / videos.length;
+        }
+
+        // 성장률 계산
+        function calculateGrowthRate(videos) {
+            if (videos.length < 5) return 'N/A';
+
+            const recent = videos.slice(0, 3);
+            const older = videos.slice(-3);
+
+            const recentAvg = calculateAverageViews(recent);
+            const olderAvg = calculateAverageViews(older);
+
+            if (olderAvg === 0) return 'N/A';
+
+            const growth = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+            if (growth > 50) return { value: 'high', label: `+${Math.round(growth)}%` };
+            if (growth > 0) return { value: 'medium', label: `+${Math.round(growth)}%` };
+            return { value: 'low', label: `${Math.round(growth)}%` };
+        }
+
+        // 영상 성과 판단
+        function getVideoPerformance(views, avgViews) {
+            if (!avgViews) return { class: 'warning', label: 'NORMAL' };
+
+            const ratio = views / avgViews;
+            if (ratio > 1.5) return { class: 'success', label: 'GOOD' };
+            if (ratio > 0.7) return { class: 'warning', label: 'NORMAL' };
+            return { class: 'danger', label: 'BAD' };
+        }
+
+        // 조회수 차트 생성
+        function createViewsChart(videos) {
+            if (!videos.length) return '<div class="empty-state">데이터가 없습니다.</div>';
+
+            const maxViews = Math.max(...videos.map(v => parseInt(v.statistics.viewCount || 0)));
+            const chartHeight = 250;
+
+            return `
+                <svg width="100%" height="${chartHeight}" style="display: block;">
+                    ${videos.map((video, index) => {
+                        const views = parseInt(video.statistics.viewCount || 0);
+                        const barHeight = (views / maxViews) * (chartHeight - 30);
+                        const barWidth = 100 / videos.length;
+                        const x = index * barWidth;
+
+                        return `
+                            <rect x="${x}%" y="${chartHeight - barHeight - 20}"
+                                  width="${barWidth * 0.8}%" height="${barHeight}"
+                                  fill="var(--accent)" opacity="0.8"
+                                  onmouseover="this.style.opacity='1'"
+                                  onmouseout="this.style.opacity='0.8'">
+                                <title>${video.snippet.title}\n조회수: ${formatNumber(views)}</title>
+                            </rect>
+                            <text x="${x + barWidth/2}%" y="${chartHeight - 5}"
+                                  text-anchor="middle" fill="var(--text-secondary)" font-size="10">
+                                ${index + 1}
+                            </text>
+                        `;
+                    }).join('')}
+                </svg>
+            `;
+        }
+
+        // 채널 검색
+        async function searchChannels() {
+            const query = document.getElementById('channelSearchInput').value;
+            if (!query) {
+                showMessage('검색어를 입력해주세요.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('channelsResults');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>검색 중...</div>';
+
+            const searchData = await callYouTubeAPI('search', {
+                q: query,
+                part: 'snippet',
+                type: 'channel',
+                maxResults: 20
+            });
+
+            if (!searchData || !searchData.items) {
+                resultsDiv.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            // 채널 ID들로 상세 정보 가져오기
+            const channelIds = searchData.items.map(item => item.snippet.channelId).join(',');
+            const channelData = await callYouTubeAPI('channels', {
+                id: channelIds,
+                part: 'statistics,snippet'
+            });
+
+            displayChannelSearchResults(channelData?.items || []);
+        }
+
+        // 채널 검색 결과 표시
+        function displayChannelSearchResults(channels) {
+            const resultsDiv = document.getElementById('channelsResults');
+
+            resultsDiv.innerHTML = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>채널</th>
+                                <th>구독자</th>
+                                <th>영상수</th>
+                                <th>총 조회수</th>
+                                <th>평균 조회수</th>
+                                <th>분석</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${channels.map(channel => {
+                                const avgViews = channel.statistics.videoCount ?
+                                    Math.round(channel.statistics.viewCount / channel.statistics.videoCount) : 0;
+
+                                return `
+                                    <tr>
+                                        <td style="display: flex; align-items: center; gap: 10px;">
+                                            <img src="${channel.snippet.thumbnails.default.url}"
+                                                 style="width: 40px; height: 40px; border-radius: 50%;">
+                                            <div>
+                                                <div style="font-weight: 600;">${channel.snippet.title}</div>
+                                                <div style="font-size: 12px; color: var(--text-secondary);">
+                                                    ${channel.snippet.description?.substring(0, 100)}...
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>${formatNumber(channel.statistics.subscriberCount)}</td>
+                                        <td>${formatNumber(channel.statistics.videoCount)}</td>
+                                        <td>${formatNumber(channel.statistics.viewCount)}</td>
+                                        <td>${formatNumber(avgViews)}</td>
+                                        <td>
+                                            <button class="btn btn-secondary"
+                                                    onclick="document.getElementById('channelInput').value='${channel.id}'; switchTab('channel'); analyzeChannel();">
+                                                분석
+                                            </button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 수집함 토글
+        function toggleCollection(videoId, button) {
+            const videoData = JSON.parse(button.dataset.video);
+            const index = collection.findIndex(v => v.id === videoId);
+
+            if (index > -1) {
+                collection.splice(index, 1);
+                button.classList.remove('collected');
+                button.textContent = '★';
+            } else {
+                collection.push(videoData);
+                button.classList.add('collected');
+                button.textContent = '✓';
+            }
+
+            localStorage.setItem('video_collection', JSON.stringify(collection));
+        }
+
+        // 수집함 표시
+        function displayCollection() {
+            const resultsDiv = document.getElementById('collectionResults');
+
+            if (!collection.length) {
+                resultsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                            <path d="M12 6l1.27 3.89h4.1l-3.32 2.41 1.27 3.89L12 13.78l-3.32 2.41 1.27-3.89-3.32-2.41h4.1z"/>
+                        </svg>
+                        <p>수집된 영상이 없습니다</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>썸네일</th>
+                                <th>제목</th>
+                                <th>채널</th>
+                                <th>조회수</th>
+                                <th>게시일</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${collection.map(video => `
+                                <tr>
+                                    <td>
+                                        <img src="${video.thumbnail}" style="width: 120px; height: 67px; object-fit: cover; border-radius: 4px;">
+                                    </td>
+                                    <td style="max-width: 300px;">
+                                        <a href="https://youtube.com/watch?v=${video.id}" target="_blank"
+                                           style="color: var(--text-primary); text-decoration: none;">
+                                            ${video.title}
+                                        </a>
+                                    </td>
+                                    <td>${video.channelTitle}</td>
+                                    <td>${formatNumber(video.viewCount)}</td>
+                                    <td>${formatDate(video.publishedAt)}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" onclick="removeFromCollection('${video.id}')">
+                                            삭제
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 수집함에서 삭제
+        function removeFromCollection(videoId) {
+            collection = collection.filter(v => v.id !== videoId);
+            localStorage.setItem('video_collection', JSON.stringify(collection));
+            displayCollection();
+        }
+
+        // =============================================
+        // 키워드 분석 기능
+        // =============================================
+
+        function generateKeywordsFor(topic) {
+            document.getElementById('keywordInput').value = topic;
+            generateKeywords();
+        }
+
+        async function generateKeywords() {
+            const input = document.getElementById('keywordInput').value.trim();
+            if (!input) {
+                showMessage('주제를 입력해주세요.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('keywordResults');
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>키워드 분석 중... (YouTube 자동완성 + 상위 영상 태그 수집)</div>';
+
+            try {
+                // 1. YouTube Suggest API로 연관 키워드 수집 (무료, 할당량 안 씀)
+                const suggestions = await getYouTubeSuggestions(input);
+
+                // 2. 상위 영상의 태그 수집 (API 할당량 사용)
+                const topVideoTags = await getTopVideoTags(input);
+
+                // 3. 키워드 점수 매기기
+                const suggestKeywords = scoreSuggestions(suggestions, input);
+                const tagKeywords = scoreTagKeywords(topVideoTags, input);
+
+                // 4. 렌더링
+                renderKeywordResults(input, suggestKeywords, tagKeywords);
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="empty-state"><h2>오류 발생</h2><p>${error.message}</p></div>`;
+            }
+        }
+
+        async function getYouTubeSuggestions(query) {
+            const variations = [query, `${query} `, `${query} 방법`, `${query} 추천`, `${query} 초보`];
+            const allSuggestions = new Set();
+
+            for (const q of variations) {
+                try {
+                    const url = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(q)}&hl=ko`;
+                    const response = await fetch(url);
+                    const text = await response.text();
+                    // JSONP 파싱
+                    const match = text.match(/\[.*\]/s);
+                    if (match) {
+                        const data = JSON.parse(match[0]);
+                        if (data[1]) {
+                            data[1].forEach(item => {
+                                const suggestion = typeof item === 'string' ? item : item[0];
+                                if (suggestion && suggestion !== query) {
+                                    allSuggestions.add(suggestion.toLowerCase().trim());
+                                }
+                            });
+                        }
+                    }
+                } catch(e) {
+                    // CORS 등 실패 — fallback으로 진행
+                }
+            }
+
+            // CORS 때문에 Suggest API가 실패할 수 있으므로 fallback 생성
+            if (allSuggestions.size === 0) {
+                const fallbacks = [
+                    `${query} 방법`, `${query} 추천`, `${query} 초보`,
+                    `${query} 시작`, `${query} 팁`, `${query} 2026`,
+                    `${query} 꿀팁`, `${query} 브이로그`, `${query} 리뷰`,
+                    `${query} 순위`, `${query} 비교`, `${query} 하는법`
+                ];
+                fallbacks.forEach(f => allSuggestions.add(f));
+            }
+
+            return [...allSuggestions];
+        }
+
+        async function getTopVideoTags(query) {
+            // 상위 15개 영상 검색
+            const searchData = await callYouTubeAPI('search', {
+                q: query,
+                type: 'video',
+                part: 'snippet',
+                maxResults: 15,
+                order: 'relevance',
+                regionCode: 'KR',
+                relevanceLanguage: 'ko'
+            });
+
+            if (!searchData?.items?.length) return {};
+
+            const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+            const videoData = await callYouTubeAPI('videos', {
+                id: videoIds,
+                part: 'snippet,statistics'
+            });
+
+            if (!videoData?.items) return {};
+
+            // 태그 빈도 분석
+            const tagCount = {};
+            const tagVideos = {}; // 어떤 영상에서 이 태그가 쓰였는지
+            let totalVideosWithTags = 0;
+
+            videoData.items.forEach(video => {
+                const tags = video.snippet.tags || [];
+                if (tags.length > 0) totalVideosWithTags++;
+
+                tags.forEach(tag => {
+                    const normalized = tag.toLowerCase().trim();
+                    tagCount[normalized] = (tagCount[normalized] || 0) + 1;
+                    if (!tagVideos[normalized]) tagVideos[normalized] = [];
+                    tagVideos[normalized].push({
+                        title: video.snippet.title,
+                        views: parseInt(video.statistics.viewCount || 0)
+                    });
+                });
+            });
+
+            return { tagCount, tagVideos, totalVideosWithTags, totalVideos: videoData.items.length };
+        }
+
+        function scoreSuggestions(suggestions, originalQuery) {
+            return suggestions.map(kw => {
+                let score = 50; // 기본 점수
+
+                // 원본 키워드 포함 시 가산
+                if (kw.includes(originalQuery)) score += 15;
+
+                // 롱테일 (단어 3개 이상) 시 경쟁 낮음 → 점수 가산
+                const wordCount = kw.split(/\s+/).length;
+                if (wordCount >= 3) score += 20;
+                else if (wordCount >= 2) score += 10;
+
+                // 짧은 키워드는 경쟁 높음
+                if (kw.length < 5) score -= 10;
+
+                // 트렌드성 단어 가산
+                if (/2026|2025|최신|트렌드|요즘/.test(kw)) score += 10;
+
+                // "방법", "하는법" 등 실용 키워드 가산
+                if (/방법|하는법|추천|비교|순위|꿀팁|시작|초보/.test(kw)) score += 10;
+
+                score = Math.min(100, Math.max(10, score));
+
+                const type = wordCount >= 3 ? '롱테일' : wordCount >= 2 ? '미드테일' : '숏테일';
+
+                return { keyword: kw, score, type, source: 'suggest' };
+            }).sort((a, b) => b.score - a.score);
+        }
+
+        function scoreTagKeywords(tagData, originalQuery) {
+            if (!tagData.tagCount) return [];
+
+            const { tagCount, tagVideos, totalVideosWithTags, totalVideos } = tagData;
+
+            return Object.entries(tagCount)
+                .map(([tag, count]) => {
+                    let score = 30;
+
+                    // 상위 영상 사용 빈도에 따라 점수
+                    const usageRate = count / totalVideos;
+                    if (usageRate >= 0.5) score += 40;
+                    else if (usageRate >= 0.3) score += 30;
+                    else if (usageRate >= 0.2) score += 20;
+                    else score += 10;
+
+                    // 해당 태그를 쓴 영상의 평균 조회수
+                    const avgViews = tagVideos[tag].reduce((sum, v) => sum + v.views, 0) / tagVideos[tag].length;
+                    if (avgViews > 1000000) score += 15;
+                    else if (avgViews > 100000) score += 10;
+                    else if (avgViews > 10000) score += 5;
+
+                    // 원본 키워드와 관련성
+                    if (tag.includes(originalQuery.toLowerCase())) score += 10;
+
+                    score = Math.min(100, Math.max(10, score));
+
+                    return {
+                        keyword: tag,
+                        score,
+                        count,
+                        totalVideos,
+                        avgViews: Math.round(avgViews),
+                        source: 'tag'
+                    };
+                })
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 30);
+        }
+
+        function getScoreClass(score) {
+            if (score >= 80) return 'kw-score-high';
+            if (score >= 60) return 'kw-score-medium';
+            if (score >= 40) return 'kw-score-low';
+            return 'kw-score-bad';
+        }
+
+        function renderKeywordResults(query, suggestKeywords, tagKeywords) {
+            const resultsDiv = document.getElementById('keywordResults');
+            const allKeywords = [...suggestKeywords.map(k => k.keyword), ...tagKeywords.map(k => k.keyword)];
+
+            resultsDiv.innerHTML = `
+                <div class="keyword-summary">
+                    <div class="keyword-summary-item">
+                        <span class="keyword-summary-value">${suggestKeywords.length + tagKeywords.length}</span>
+                        <span class="keyword-summary-label">발견된 키워드</span>
+                    </div>
+                    <div class="keyword-summary-item">
+                        <span class="keyword-summary-value">${suggestKeywords.length}</span>
+                        <span class="keyword-summary-label">자동완성 키워드</span>
+                    </div>
+                    <div class="keyword-summary-item">
+                        <span class="keyword-summary-value">${tagKeywords.length}</span>
+                        <span class="keyword-summary-label">상위 영상 태그</span>
+                    </div>
+                    <button class="btn" onclick="copyAllKeywords()" style="margin-left: auto; font-size: 12px; padding: 8px 16px;">
+                        📋 전체 복사
+                    </button>
+                    <button class="btn btn-secondary" onclick="exportKeywordsCSV()" style="font-size: 12px; padding: 8px 16px;">
+                        📥 CSV 내보내기
+                    </button>
+                </div>
+
+                <div class="keyword-results-grid">
+                    <div class="keyword-section">
+                        <div class="keyword-section-header">
+                            🔍 자동완성 키워드
+                            <span style="font-size: 11px; font-weight: 400; color: var(--text-secondary); margin-left: auto;">
+                                사람들이 실제 검색하는 키워드
+                            </span>
+                        </div>
+                        <table class="keyword-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>키워드</th>
+                                    <th>유형</th>
+                                    <th>점수</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${suggestKeywords.slice(0, 20).map((kw, i) => `
+                                    <tr>
+                                        <td style="color: var(--text-tertiary)">${i + 1}</td>
+                                        <td class="kw-name" onclick="searchFromKeyword('${kw.keyword.replace(/'/g, "\\'")}')">${kw.keyword}</td>
+                                        <td><span class="kw-type">${kw.type}</span></td>
+                                        <td><span class="kw-score ${getScoreClass(kw.score)}">${kw.score}</span></td>
+                                        <td><button class="kw-copy-btn" onclick="copyKeyword('${kw.keyword.replace(/'/g, "\\'")}')">복사</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="keyword-section">
+                        <div class="keyword-section-header">
+                            🏷️ 상위 영상 태그 분석
+                            <span style="font-size: 11px; font-weight: 400; color: var(--text-secondary); margin-left: auto;">
+                                상위 영상들이 사용 중인 태그
+                            </span>
+                        </div>
+                        <table class="keyword-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>태그</th>
+                                    <th>사용</th>
+                                    <th>평균 조회</th>
+                                    <th>점수</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tagKeywords.length > 0 ? tagKeywords.map((kw, i) => `
+                                    <tr>
+                                        <td style="color: var(--text-tertiary)">${i + 1}</td>
+                                        <td class="kw-name" onclick="searchFromKeyword('${kw.keyword.replace(/'/g, "\\'")}')">${kw.keyword}</td>
+                                        <td style="font-size: 12px">${kw.count}/${kw.totalVideos}</td>
+                                        <td style="font-size: 12px">${formatNumber(kw.avgViews)}</td>
+                                        <td><span class="kw-score ${getScoreClass(kw.score)}">${kw.score}</span></td>
+                                    </tr>
+                                `).join('') : `
+                                    <tr><td colspan="5" style="text-align: center; color: var(--text-tertiary); padding: 30px;">
+                                        상위 영상에 태그가 없습니다
+                                    </td></tr>
+                                `}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+
+            // 전체 키워드 저장 (복사/CSV용)
+            window._lastKeywordResults = { query, suggestKeywords, tagKeywords };
+        }
+
+        function searchFromKeyword(keyword) {
+            switchTab('videos');
+            document.getElementById('videoSearchInput').value = keyword;
+            searchVideos();
+        }
+
+        function copyKeyword(keyword) {
+            navigator.clipboard.writeText(keyword).then(() => {
+                showMessage(`"${keyword}" 복사됨!`);
+            });
+        }
+
+        function copyAllKeywords() {
+            if (!window._lastKeywordResults) return;
+            const { suggestKeywords, tagKeywords } = window._lastKeywordResults;
+            const all = [...suggestKeywords.map(k => k.keyword), ...tagKeywords.map(k => k.keyword)];
+            const unique = [...new Set(all)];
+            navigator.clipboard.writeText(unique.join(', ')).then(() => {
+                showMessage(`${unique.length}개 키워드 복사됨!`);
+            });
+        }
+
+        function exportKeywordsCSV() {
+            if (!window._lastKeywordResults) return;
+            const { query, suggestKeywords, tagKeywords } = window._lastKeywordResults;
+
+            let csv = 'BOM\n'.replace('BOM', '\uFEFF');
+            csv = '\uFEFF키워드,점수,유형,출처,사용빈도,평균조회수\n';
+
+            suggestKeywords.forEach(kw => {
+                csv += `"${kw.keyword}",${kw.score},${kw.type},자동완성,,\n`;
+            });
+            tagKeywords.forEach(kw => {
+                csv += `"${kw.keyword}",${kw.score},태그,상위영상태그,${kw.count}/${kw.totalVideos},${kw.avgViews}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `keywords_${query}_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+        }
+
+        // =============================================
+        // 수집함 기능
+        // =============================================
+
+        // 수집함 전체 삭제
+        function clearCollection() {
+            if (confirm('모든 수집된 영상을 삭제하시겠습니까?')) {
+                collection = [];
+                localStorage.setItem('video_collection', JSON.stringify(collection));
+                displayCollection();
+                showMessage('수집함이 비워졌습니다.', 'success');
+            }
+        }
+
+        // CSV 내보내기
+        function exportToCSV() {
+            if (!collection.length) {
+                showMessage('내보낼 데이터가 없습니다.');
+                return;
+            }
+
+            const headers = ['제목', '채널', 'URL', '조회수', '좋아요', '댓글', '게시일', '구독자수', '폴더'];
+            const rows = collection.map(video => [
+                video.title,
+                video.channelTitle,
+                `https://youtube.com/watch?v=${video.id}`,
+                video.viewCount,
+                video.likeCount,
+                video.commentCount,
+                video.publishedAt,
+                video.subscriberCount,
+                video.folder || '미분류'
+            ]);
+
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+            ].join('\n');
+
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `youtube_collection_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+
+            showMessage('CSV 파일이 다운로드되었습니다.', 'success');
+        }
+
+        // 비디오 모달 열기
+        async function openVideoModal(videoId) {
+            const video = allVideos.find(v => v.id === videoId) ||
+                         filteredVideos.find(v => v.id === videoId) ||
+                         collection.find(v => v.id === videoId);
+
+            if (!video) {
+                showMessage('영상 정보를 찾을 수 없습니다.');
+                return;
+            }
+
+            currentVideo = video;
+            const modal = document.getElementById('videoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.textContent = video.title;
+            modalBody.innerHTML = '<div class="loading"><div class="spinner"></div>상세 정보 로딩 중...</div>';
+
+            modal.classList.add('active');
+
+            // 추가 데이터 가져오기
+            const channelDetails = await getChannelDetails(video.channelId);
+            const comments = await getVideoComments(videoId);
+            const popularVideos = await getChannelPopularVideos(video.channelId);
+
+            renderVideoModal(video, channelDetails, comments, popularVideos);
+        }
+
+        // 채널 상세 정보 가져오기
+        async function getChannelDetails(channelId) {
+            const data = await callYouTubeAPI('channels', {
+                id: channelId,
+                part: 'snippet,statistics'
+            });
+            return data?.items?.[0] || null;
+        }
+
+        // 비디오 댓글 가져오기
+        async function getVideoComments(videoId) {
+            const data = await callYouTubeAPI('commentThreads', {
+                videoId: videoId,
+                part: 'snippet',
+                maxResults: 5,
+                order: 'relevance'
+            });
+            return data?.items || [];
+        }
+
+        // 채널 인기 영상 가져오기
+        async function getChannelPopularVideos(channelId) {
+            const data = await callYouTubeAPI('search', {
+                channelId: channelId,
+                part: 'snippet',
+                order: 'viewCount',
+                type: 'video',
+                maxResults: 3
+            });
+
+            if (!data?.items?.length) return [];
+
+            const videoIds = data.items.map(item => item.id.videoId).join(',');
+            const videoDetails = await callYouTubeAPI('videos', {
+                id: videoIds,
+                part: 'statistics'
+            });
+
+            return data.items.map((item, index) => ({
+                ...item,
+                statistics: videoDetails?.items?.[index]?.statistics || {}
+            }));
+        }
+
+        // 비디오 모달 렌더링
+        function renderVideoModal(video, channel, comments, popularVideos) {
+            const modalBody = document.getElementById('modalBody');
+            const isCollected = collection.some(v => v.id === video.id);
+
+            const exposure = calculateExposureProbability(video.viewCount, video.publishedAt, allVideos);
+            const contribution = calculateContribution(video.viewCount, video.avgViews);
+            const performance = calculatePerformance(video.viewCount, video.subscriberCount);
+
+            modalBody.innerHTML = `
+                <div class="video-detail-grid">
+                    <div class="video-main-info">
+                        <h2>${video.title}</h2>
+
+                        <div class="video-meta">
+                            <span>조회수 ${formatNumber(video.viewCount)}</span>
+                            <span>👍 ${formatNumber(video.likeCount)}</span>
+                            <span>💬 ${formatNumber(video.commentCount)}</span>
+                            <span>${formatDate(video.publishedAt)}</span>
+                        </div>
+
+                        <div class="badges" style="margin: 15px 0;">
+                            <span class="badge badge-${exposure.value}">노출 ${exposure.label}</span>
+                            <span class="badge badge-${contribution.value}">기여도 ${contribution.label}</span>
+                            <span class="badge badge-${performance.value}">성과도 ${performance.label}</span>
+                        </div>
+
+                        ${video.tags?.length ? `
+                            <div style="margin: 15px 0;">
+                                <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 600;">🏷️ 키워드 태그 (${video.tags.length}개)</div>
+                                <div class="tags-container">
+                                    ${video.tags.slice(0, 20).map(tag => `<span class="tag">#${tag}</span>`).join('')}
+                                    ${video.tags.length > 20 ? `<span class="tag" style="opacity: 0.5;">+${video.tags.length - 20}개</span>` : ''}
+                                </div>
+                            </div>
+                        ` : '<div style="margin: 15px 0; font-size: 12px; color: var(--text-tertiary);">🏷️ 설정된 키워드 태그가 없습니다</div>'}
+
+                        <div class="video-description">
+                            ${video.description || '설명이 없습니다.'}
+                        </div>
+
+                        <div class="action-buttons">
+                            <button class="action-btn action-btn-collect ${isCollected ? 'collected' : ''}"
+                                    onclick="toggleCollectionFromModal('${video.id}')">
+                                ${isCollected ? '✓ 수집됨' : '★ 영상 수집'}
+                            </button>
+                            <button class="action-btn action-btn-channel"
+                                    onclick="analyzeChannelFromModal('${video.channelId}')">
+                                📊 채널 분석
+                            </button>
+                            <button class="action-btn" style="background: var(--accent-light); color: var(--accent);"
+                                    onclick="copyAIAnalysisPrompt()">
+                                🤖 AI 분석용 복사
+                            </button>
+                            <button class="action-btn action-btn-youtube"
+                                    onclick="window.open('https://youtube.com/watch?v=${video.id}', '_blank')">
+                                ▶ YouTube에서 보기
+                            </button>
+                        </div>
+
+                        ${comments.length > 0 ? `
+                            <div class="comments-section">
+                                <h3>베스트 댓글</h3>
+                                ${comments.map(comment => {
+                                    const snippet = comment.snippet.topLevelComment.snippet;
+                                    return `
+                                        <div class="comment-item">
+                                            <div class="comment-header">
+                                                <img src="${snippet.authorProfileImageUrl}" class="comment-avatar">
+                                                <div>
+                                                    <div class="comment-author">${snippet.authorDisplayName}</div>
+                                                    <div class="comment-date">${formatDate(snippet.publishedAt)}</div>
+                                                </div>
+                                            </div>
+                                            <div class="comment-text">${snippet.textDisplay}</div>
+                                            <div class="comment-stats">
+                                                <span>👍 ${formatNumber(snippet.likeCount)}</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="video-sidebar">
+                        ${channel ? `
+                            <div class="channel-info-card">
+                                <div class="channel-info-header">
+                                    <img src="${channel.snippet.thumbnails.high.url}" class="channel-info-avatar">
+                                    <div class="channel-info-details">
+                                        <h3>${channel.snippet.title}</h3>
+                                        <div style="color: var(--text-secondary); font-size: 12px;">
+                                            ${formatNumber(channel.statistics.subscriberCount)} 구독자
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 15px; font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+                                    ${channel.snippet.description?.substring(0, 150)}...
+                                </div>
+                                <div style="margin-top: 15px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 12px;">
+                                    <div style="text-align: center;">
+                                        <div style="font-weight: bold; color: var(--accent);">${formatNumber(channel.statistics.videoCount)}</div>
+                                        <div style="color: var(--text-tertiary);">영상</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-weight: bold; color: var(--accent);">${formatNumber(channel.statistics.viewCount)}</div>
+                                        <div style="color: var(--text-tertiary);">총 조회수</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${popularVideos.length > 0 ? `
+                            <div class="channel-info-card">
+                                <h4 style="margin-bottom: 10px; font-size: 14px;">인기 영상</h4>
+                                <div class="popular-videos-list">
+                                    ${popularVideos.map(pv => `
+                                        <div class="popular-video-item" onclick="window.open('https://youtube.com/watch?v=${pv.id.videoId}', '_blank')">
+                                            <img src="${pv.snippet.thumbnails.default.url}" class="popular-video-thumb">
+                                            <div class="popular-video-info">
+                                                <div class="popular-video-title">${pv.snippet.title}</div>
+                                                <div style="font-size: 11px; color: var(--text-tertiary);">
+                                                    ${formatNumber(pv.statistics.viewCount)} 조회
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('videoModal').classList.remove('active');
+            currentVideo = null;
+        }
+
+        // 모달에서 수집 토글
+        function toggleCollectionFromModal(videoId) {
+            const video = currentVideo || allVideos.find(v => v.id === videoId);
+            if (!video) return;
+
+            const index = collection.findIndex(v => v.id === videoId);
+            const btn = document.querySelector('.action-btn-collect');
+
+            if (index > -1) {
+                collection.splice(index, 1);
+                btn.classList.remove('collected');
+                btn.innerHTML = '★ 영상 수집';
+            } else {
+                collection.push({ ...video, folder: null, addedAt: new Date().toISOString() });
+                btn.classList.add('collected');
+                btn.innerHTML = '✓ 수집됨';
+            }
+
+            localStorage.setItem('video_collection', JSON.stringify(collection));
+
+            // 카드 버튼도 업데이트
+            const cardBtn = document.querySelector(`[data-video*="${videoId}"]`);
+            if (cardBtn) {
+                if (index > -1) {
+                    cardBtn.classList.remove('collected');
+                    cardBtn.textContent = '★';
+                } else {
+                    cardBtn.classList.add('collected');
+                    cardBtn.textContent = '✓';
+                }
+            }
+        }
+
+        // 모달에서 채널 분석
+        function analyzeChannelFromModal(channelId) {
+            closeModal();
+            document.getElementById('channelInput').value = channelId;
+            switchTabByName('channel');
+            analyzeChannel();
+        }
+
+        // 탭 전환 (이름으로)
+        function switchTabByName(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            const targetTab = Array.from(document.querySelectorAll('.tab'))
+                .find(tab => tab.textContent.includes(tabName === 'channel' ? '채널 분석' : ''));
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        // 필터 토글
+        function toggleFilter(element) {
+            element.classList.toggle('active');
+
+            const filterType = element.dataset.filter;
+            const filterValue = element.dataset.value;
+
+            if (filterType === 'shorts') {
+                // Shorts 필터는 단일 선택
+                document.querySelectorAll(`[data-filter="shorts"]`).forEach(chip => {
+                    if (chip !== element) chip.classList.remove('active');
+                });
+                currentFilters.shorts = element.classList.contains('active') ? filterValue : '';
+            } else {
+                // 다른 필터는 다중 선택
+                if (!currentFilters[filterType]) currentFilters[filterType] = [];
+
+                if (element.classList.contains('active')) {
+                    if (!currentFilters[filterType].includes(filterValue)) {
+                        currentFilters[filterType].push(filterValue);
+                    }
+                } else {
+                    currentFilters[filterType] = currentFilters[filterType].filter(v => v !== filterValue);
+                }
+            }
+
+            applyFilters();
+        }
+
+        // 필터 적용
+        function applyFilters() {
+            currentFilters.minViews = parseInt(document.getElementById('minViews')?.value || 0);
+            currentFilters.dateFilter = document.getElementById('dateFilter')?.value || 'all';
+
+            if (allVideos.length > 0) {
+                applyFiltersAndSort();
+            }
+        }
+
+        // 정렬 적용
+        function applySort() {
+            currentFilters.sortBy = document.getElementById('sortBy').value;
+            if (allVideos.length > 0) {
+                applyFiltersAndSort();
+            }
+        }
+
+        // 정렬 방향 토글
+        function toggleSortDirection() {
+            const btn = document.getElementById('sortDirection');
+            currentFilters.sortDirection = currentFilters.sortDirection === 'desc' ? 'asc' : 'desc';
+            btn.classList.toggle('desc');
+
+            if (allVideos.length > 0) {
+                applyFiltersAndSort();
+            }
+        }
+
+        // 폴더 생성
+        function createFolder() {
+            const folderName = prompt('폴더 이름을 입력하세요:');
+            if (folderName && !folders.includes(folderName)) {
+                folders.push(folderName);
+                localStorage.setItem('video_folders', JSON.stringify(folders));
+                updateFolderSelect();
+                showMessage('폴더가 생성되었습니다.', 'success');
+            }
+        }
+
+        // 폴더 선택 업데이트
+        function updateFolderSelect() {
+            const select = document.getElementById('folderSelect');
+            if (select) {
+                select.innerHTML = '<option value="all">전체</option>';
+                folders.forEach(folder => {
+                    select.innerHTML += `<option value="${folder}">${folder}</option>`;
+                });
+            }
+        }
+
+        // 폴더별 필터링
+        function filterByFolder() {
+            const selectedFolder = document.getElementById('folderSelect').value;
+            displayCollection(selectedFolder);
+        }
+
+        // 수집함 표시 (개선된 버전)
+        function displayCollection(folderFilter = 'all') {
+            const resultsDiv = document.getElementById('collectionResults');
+
+            let displayItems = collection;
+            if (folderFilter !== 'all') {
+                displayItems = collection.filter(v => v.folder === folderFilter);
+            }
+
+            if (!displayItems.length) {
+                resultsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                            <path d="M12 6l1.27 3.89h4.1l-3.32 2.41 1.27 3.89L12 13.78l-3.32 2.41 1.27-3.89-3.32-2.41h4.1z"/>
+                        </svg>
+                        <p>${folderFilter === 'all' ? '수집된 영상이 없습니다' : '이 폴더에 영상이 없습니다'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsDiv.innerHTML = `
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>썸네일</th>
+                                <th>제목</th>
+                                <th>채널</th>
+                                <th>조회수</th>
+                                <th>게시일</th>
+                                <th>폴더</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${displayItems.map(video => `
+                                <tr>
+                                    <td>
+                                        <img src="${video.thumbnail}" style="width: 120px; height: 67px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                                             onclick="openVideoModal('${video.id}')">
+                                    </td>
+                                    <td style="max-width: 300px;">
+                                        <a href="#" onclick="openVideoModal('${video.id}'); return false;"
+                                           style="color: var(--text-primary); text-decoration: none;">
+                                            ${video.title}
+                                        </a>
+                                    </td>
+                                    <td>${video.channelTitle}</td>
+                                    <td>${formatNumber(video.viewCount)}</td>
+                                    <td>${formatDate(video.publishedAt)}</td>
+                                    <td>
+                                        <select class="filter-select" onchange="moveToFolder('${video.id}', this.value)">
+                                            <option value="">미분류</option>
+                                            ${folders.map(f => `
+                                                <option value="${f}" ${video.folder === f ? 'selected' : ''}>${f}</option>
+                                            `).join('')}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-secondary" onclick="removeFromCollection('${video.id}')">
+                                            삭제
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // 폴더로 이동
+        function moveToFolder(videoId, folderName) {
+            const video = collection.find(v => v.id === videoId);
+            if (video) {
+                video.folder = folderName || null;
+                localStorage.setItem('video_collection', JSON.stringify(collection));
+                showMessage('폴더가 변경되었습니다.', 'success');
+            }
+        }
+
+        // ═══════════════════════════════════════════════
+        // 채널 추적 기능
+        // ═══════════════════════════════════════════════
+
+        let trackedChannels = JSON.parse(localStorage.getItem('youtube_tracked_channels') || '[]');
+
+        function renderTrackedChannels() {
+            const container = document.getElementById('trackedChannelsList');
+            if (!trackedChannels.length) {
+                container.innerHTML = '<div class="empty-state">등록된 채널이 없습니다.<br>채널 URL, @핸들 또는 ID를 입력하세요.</div>';
+                return;
+            }
+            container.innerHTML = trackedChannels.map((ch, i) => `
+                <div class="tracked-channel-card" onclick="showChannelReport('${ch.id}')">
+                    <button class="remove-channel-btn" onclick="event.stopPropagation(); removeTrackedChannel(${i})" title="삭제">✕</button>
+                    <div class="tracked-channel-header">
+                        <img src="${ch.thumbnail}" class="tracked-channel-avatar" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 48 48%22><rect fill=%22%23333%22 width=%2248%22 height=%2248%22/><text x=%2224%22 y=%2230%22 text-anchor=%22middle%22 fill=%22%23aaa%22 font-size=%2220%22>📺</text></svg>'">
+                        <div class="tracked-channel-info">
+                            <div class="tracked-channel-name">${ch.title}</div>
+                            <div class="tracked-channel-stats" style="font-size:11px;color:var(--text-secondary);">
+                                구독자 ${formatNumber(ch.subscriberCount)} · 영상 ${formatNumber(ch.videoCount)}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-tertiary);margin-top:8px;">
+                        등록: ${new Date(ch.addedAt).toLocaleDateString('ko-KR')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function extractChannelInput(input) {
+            input = input.trim();
+            // @핸들
+            if (input.startsWith('@')) return { type: 'handle', value: input };
+            // URL에서 추출
+            const handleMatch = input.match(/youtube\.com\/@([^\/\?]+)/);
+            if (handleMatch) return { type: 'handle', value: '@' + handleMatch[1] };
+            const channelMatch = input.match(/youtube\.com\/channel\/([^\/\?]+)/);
+            if (channelMatch) return { type: 'id', value: channelMatch[1] };
+            // UC로 시작하면 채널 ID
+            if (input.startsWith('UC') && input.length > 20) return { type: 'id', value: input };
+            // 그 외는 핸들로 시도
+            return { type: 'handle', value: '@' + input.replace(/^@/, '') };
+        }
+
+        async function addTrackedChannel() {
+            const input = document.getElementById('trackingChannelInput').value;
+            if (!input) { showMessage('채널 URL, @핸들 또는 ID를 입력하세요.'); return; }
+
+            const parsed = extractChannelInput(input);
+            let channelData;
+
+            if (parsed.type === 'handle') {
+                channelData = await callYouTubeAPI('channels', {
+                    forHandle: parsed.value.replace('@', ''),
+                    part: 'snippet,statistics'
+                });
+            } else {
+                channelData = await callYouTubeAPI('channels', {
+                    id: parsed.value,
+                    part: 'snippet,statistics'
+                });
+            }
+
+            if (!channelData?.items?.length) {
+                showMessage('채널을 찾을 수 없습니다. URL이나 핸들을 확인해주세요.', 'error');
+                return;
+            }
+
+            const ch = channelData.items[0];
+            if (trackedChannels.some(t => t.id === ch.id)) {
+                showMessage('이미 등록된 채널입니다.', 'error');
+                return;
+            }
+
+            trackedChannels.push({
+                id: ch.id,
+                title: ch.snippet.title,
+                thumbnail: ch.snippet.thumbnails.default.url,
+                subscriberCount: parseInt(ch.statistics.subscriberCount) || 0,
+                videoCount: parseInt(ch.statistics.videoCount) || 0,
+                addedAt: new Date().toISOString(),
+                lastCheckAt: null
+            });
+
+            localStorage.setItem('youtube_tracked_channels', JSON.stringify(trackedChannels));
+            document.getElementById('trackingChannelInput').value = '';
+            renderTrackedChannels();
+            updateCompareSelects();
+            showMessage(`${ch.snippet.title} 채널이 등록되었습니다.`, 'success');
+        }
+
+        function removeTrackedChannel(index) {
+            const name = trackedChannels[index].title;
+            trackedChannels.splice(index, 1);
+            localStorage.setItem('youtube_tracked_channels', JSON.stringify(trackedChannels));
+            renderTrackedChannels();
+            updateCompareSelects();
+            showMessage(`${name} 채널이 제거되었습니다.`, 'success');
+        }
+
+        async function checkNewVideos() {
+            if (!trackedChannels.length) { showMessage('먼저 채널을 등록하세요.'); return; }
+
+            const section = document.getElementById('newVideosSection');
+            const list = document.getElementById('newVideosList');
+            section.style.display = 'block';
+            list.innerHTML = '<div class="loading"><div class="spinner"></div>새 영상 확인 중...</div>';
+
+            const lastGlobalCheck = localStorage.getItem('tracking_last_check');
+            let allNewVideos = [];
+
+            for (const ch of trackedChannels) {
+                const searchData = await callYouTubeAPI('search', {
+                    channelId: ch.id,
+                    part: 'snippet',
+                    type: 'video',
+                    order: 'date',
+                    maxResults: 5
+                });
+
+                if (searchData?.items?.length) {
+                    const videoIds = searchData.items.map(v => v.id.videoId).join(',');
+                    const videoData = await callYouTubeAPI('videos', {
+                        id: videoIds,
+                        part: 'snippet,statistics'
+                    });
+
+                    if (videoData?.items) {
+                        videoData.items.forEach(v => {
+                            const isNew = lastGlobalCheck && new Date(v.snippet.publishedAt) > new Date(lastGlobalCheck);
+                            allNewVideos.push({
+                                ...v,
+                                channelTitle: ch.title,
+                                channelThumbnail: ch.thumbnail,
+                                subscriberCount: ch.subscriberCount,
+                                isNew: isNew
+                            });
+                        });
+                    }
+                }
+                ch.lastCheckAt = new Date().toISOString();
+            }
+
+            const now = new Date().toISOString();
+            localStorage.setItem('tracking_last_check', now);
+            localStorage.setItem('youtube_tracked_channels', JSON.stringify(trackedChannels));
+            document.getElementById('lastCheckTime').textContent = `마지막 확인: ${new Date().toLocaleString('ko-KR')}`;
+
+            allNewVideos.sort((a, b) => new Date(b.snippet.publishedAt) - new Date(a.snippet.publishedAt));
+
+            if (!allNewVideos.length) {
+                list.innerHTML = '<div class="empty-state">새 영상이 없습니다.</div>';
+                return;
+            }
+
+            list.innerHTML = '<div class="new-videos-grid">' + allNewVideos.map(v => {
+                const views = parseInt(v.statistics?.viewCount) || 0;
+                const likes = parseInt(v.statistics?.likeCount) || 0;
+                const comments = parseInt(v.statistics?.commentCount) || 0;
+                const contribution = v.subscriberCount > 0 ? (views / v.subscriberCount * 100) : 0;
+                const contribBadge = contribution >= 100 ? 'great' : contribution >= 50 ? 'good' : contribution >= 10 ? 'normal' : 'bad';
+                const contribLabel = contribution >= 100 ? '최고' : contribution >= 50 ? '좋음' : contribution >= 10 ? '보통' : '낮음';
+
+                return `
+                    <div class="new-video-card" onclick="window.open('https://youtube.com/watch?v=${v.id}','_blank')">
+                        ${v.isNew ? '<div class="new-badge">NEW</div>' : ''}
+                        <img src="${v.snippet.thumbnails?.high?.url || v.snippet.thumbnails?.medium?.url || ''}" style="width:100%;aspect-ratio:16/9;object-fit:cover;">
+                        <div style="padding:12px;">
+                            <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+                                <img src="${v.channelThumbnail}" style="width:24px;height:24px;border-radius:50%;">
+                                <span style="font-size:11px;color:var(--text-secondary);">${v.channelTitle}</span>
+                            </div>
+                            <div style="font-size:13px;font-weight:600;margin-bottom:8px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${v.snippet.title}</div>
+                            <div style="display:flex;gap:10px;font-size:11px;color:var(--text-secondary);flex-wrap:wrap;">
+                                <span>조회수 ${formatNumber(views)}</span>
+                                <span>👍 ${formatNumber(likes)}</span>
+                                <span>💬 ${formatNumber(comments)}</span>
+                                <span>${formatDate(v.snippet.publishedAt)}</span>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <span class="badge badge-${contribBadge}" style="font-size:10px;">기여도 ${contribLabel} (${contribution.toFixed(1)}%)</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('') + '</div>';
+        }
+
+        async function showChannelReport(channelId) {
+            const ch = trackedChannels.find(c => c.id === channelId);
+            if (!ch) return;
+
+            const section = document.getElementById('channelReportSection');
+            const content = document.getElementById('channelReportContent');
+            section.style.display = 'block';
+            content.innerHTML = '<div class="loading"><div class="spinner"></div>리포트 생성 중...</div>';
+
+            // 최근 영상 가져오기
+            const searchData = await callYouTubeAPI('search', {
+                channelId: channelId,
+                part: 'snippet',
+                type: 'video',
+                order: 'date',
+                maxResults: 10
+            });
+
+            if (!searchData?.items?.length) {
+                content.innerHTML = '<div class="empty-state">영상 데이터를 가져올 수 없습니다.</div>';
+                return;
+            }
+
+            const videoIds = searchData.items.map(v => v.id.videoId).join(',');
+            const videoData = await callYouTubeAPI('videos', {
+                id: videoIds,
+                part: 'snippet,statistics'
+            });
+
+            if (!videoData?.items?.length) {
+                content.innerHTML = '<div class="empty-state">영상 상세 정보를 가져올 수 없습니다.</div>';
+                return;
+            }
+
+            const videos = videoData.items;
+            const totalViews = videos.reduce((s, v) => s + (parseInt(v.statistics?.viewCount) || 0), 0);
+            const totalLikes = videos.reduce((s, v) => s + (parseInt(v.statistics?.likeCount) || 0), 0);
+            const totalComments = videos.reduce((s, v) => s + (parseInt(v.statistics?.commentCount) || 0), 0);
+            const avgViews = totalViews / videos.length;
+            const avgContribution = ch.subscriberCount > 0 ? (avgViews / ch.subscriberCount * 100) : 0;
+            const avgEngagement = totalViews > 0 ? ((totalLikes + totalComments) / totalViews * 100) : 0;
+
+            // 최고/최저
+            const sorted = [...videos].sort((a, b) => (parseInt(b.statistics?.viewCount) || 0) - (parseInt(a.statistics?.viewCount) || 0));
+            const best = sorted[0];
+            const worst = sorted[sorted.length - 1];
+
+            // 업로드 주기
+            const dates = videos.map(v => new Date(v.snippet.publishedAt)).sort((a, b) => a - b);
+            let avgInterval = 0;
+            if (dates.length > 1) {
+                const totalDays = (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24);
+                avgInterval = totalDays / (dates.length - 1);
+            }
+
+            // 태그 TOP 10
+            const tagCount = {};
+            videos.forEach(v => {
+                (v.snippet.tags || []).forEach(tag => {
+                    tagCount[tag] = (tagCount[tag] || 0) + 1;
+                });
+            });
+            const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+            const contribBadge = avgContribution >= 100 ? 'great' : avgContribution >= 50 ? 'good' : avgContribution >= 10 ? 'normal' : 'bad';
+            const engageBadge = avgEngagement >= 5 ? 'great' : avgEngagement >= 2 ? 'good' : avgEngagement >= 0.5 ? 'normal' : 'bad';
+
+            content.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                    <img src="${ch.thumbnail}" style="width:48px;height:48px;border-radius:50%;">
+                    <div>
+                        <div style="font-size:18px;font-weight:700;">${ch.title}</div>
+                        <div style="font-size:12px;color:var(--text-secondary);">구독자 ${formatNumber(ch.subscriberCount)} · 최근 ${videos.length}개 영상 분석</div>
+                    </div>
+                </div>
+
+                <div class="channel-report-stats">
+                    <div class="report-stat-card">
+                        <div class="report-stat-value">${formatNumber(Math.round(avgViews))}</div>
+                        <div class="report-stat-label">평균 조회수</div>
+                    </div>
+                    <div class="report-stat-card">
+                        <div class="report-stat-value"><span class="badge badge-${contribBadge}">${avgContribution.toFixed(1)}%</span></div>
+                        <div class="report-stat-label">평균 기여도</div>
+                    </div>
+                    <div class="report-stat-card">
+                        <div class="report-stat-value"><span class="badge badge-${engageBadge}">${avgEngagement.toFixed(2)}%</span></div>
+                        <div class="report-stat-label">평균 참여도</div>
+                    </div>
+                    <div class="report-stat-card">
+                        <div class="report-stat-value">${avgInterval > 0 ? avgInterval.toFixed(1) + '일' : '-'}</div>
+                        <div class="report-stat-label">업로드 주기</div>
+                    </div>
+                </div>
+
+                <div class="report-videos-section">
+                    <div class="report-section-title">🏆 최고 성과 영상</div>
+                    <div class="report-video-item">
+                        <img src="${best.snippet.thumbnails?.medium?.url || ''}" class="report-video-thumbnail">
+                        <div class="report-video-details">
+                            <div class="report-video-title">${best.snippet.title}</div>
+                            <div class="report-video-stats">
+                                <span>조회수 ${formatNumber(best.statistics?.viewCount)}</span>
+                                <span>👍 ${formatNumber(best.statistics?.likeCount)}</span>
+                                <span>💬 ${formatNumber(best.statistics?.commentCount)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="report-videos-section">
+                    <div class="report-section-title">📉 최저 성과 영상</div>
+                    <div class="report-video-item">
+                        <img src="${worst.snippet.thumbnails?.medium?.url || ''}" class="report-video-thumbnail">
+                        <div class="report-video-details">
+                            <div class="report-video-title">${worst.snippet.title}</div>
+                            <div class="report-video-stats">
+                                <span>조회수 ${formatNumber(worst.statistics?.viewCount)}</span>
+                                <span>👍 ${formatNumber(worst.statistics?.likeCount)}</span>
+                                <span>💬 ${formatNumber(worst.statistics?.commentCount)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                ${topTags.length ? `
+                    <div class="report-videos-section">
+                        <div class="report-section-title">🏷️ 자주 쓰는 태그 TOP 10</div>
+                        <div class="top-tags-list">
+                            ${topTags.map(([tag, count]) => `
+                                <span class="top-tag-item">#${tag}<span class="top-tag-count">(${count})</span></span>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <div style="margin-top:20px;text-align:center;">
+                    <button class="btn" style="background:var(--accent-light);color:var(--accent);padding:12px 24px;font-size:14px;font-weight:600;" id="channelAICopyBtn">
+                        🤖 채널 AI 분석용 복사
+                    </button>
+                </div>
+            `;
+
+            // 버튼 이벤트 바인딩
+            const aiBtn = document.getElementById('channelAICopyBtn');
+            if (aiBtn) {
+                aiBtn.onclick = () => copyChannelAIAnalysis(
+                    ch.title, ch.subscriberCount, Math.round(avgViews),
+                    avgContribution.toFixed(1), avgEngagement.toFixed(2),
+                    avgInterval > 0 ? avgInterval.toFixed(1) : 0,
+                    best.snippet.title, worst.snippet.title,
+                    topTags.map(([t]) => t).join(', ')
+                );
+            }
+        }
+
+        function copyChannelAIAnalysis(title, subs, avgViews, contrib, engage, interval, bestTitle, worstTitle, tags) {
+            const prompt = `아래 유튜브 채널을 분석하고, 내 채널 전략에 적용할 수 있는 인사이트를 알려줘.
+
+## 채널 정보
+- 채널명: ${title}
+- 구독자: ${subs.toLocaleString()}
+- 평균 조회수: ${avgViews.toLocaleString()}
+- 평균 기여도: ${contrib}%
+- 평균 참여도: ${engage}%
+- 업로드 주기: ${interval > 0 ? interval + '일' : '정보 없음'}
+- 최고 성과 영상: ${bestTitle}
+- 최저 성과 영상: ${worstTitle}
+- 자주 쓰는 태그: ${tags}
+
+## 분석 요청
+1. 이 채널의 콘텐츠 전략 요약
+2. 성과 좋은 영상과 나쁜 영상의 차이점
+3. 이 채널의 강점과 약점
+4. 내 채널이 이 채널에서 배울 수 있는 것 3가지
+5. 이 채널과 경쟁한다면 차별화 전략`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                showModalToast('✅ 채널 AI 분석 프롬프트가 복사되었습니다!');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = prompt;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showModalToast('✅ 복사되었습니다!');
+            });
+        }
+
+        // 채널 비교 셀렉트 업데이트
+        function updateCompareSelects() {
+            const selA = document.getElementById('compareChannelA');
+            const selB = document.getElementById('compareChannelB');
+            if (!selA || !selB) return;
+            const opts = '<option value="">채널 선택</option>' + trackedChannels.map(ch =>
+                `<option value="${ch.id}">${ch.title}</option>`
+            ).join('');
+            selA.innerHTML = opts;
+            selB.innerHTML = opts;
+            // 2개 이상 등록돼 있으면 비교 섹션 표시
+            document.getElementById('channelCompareSection').style.display = trackedChannels.length >= 2 ? 'block' : 'none';
+        }
+
+        async function compareChannels() {
+            const idA = document.getElementById('compareChannelA').value;
+            const idB = document.getElementById('compareChannelB').value;
+            if (!idA || !idB) { showMessage('두 채널을 모두 선택하세요.'); return; }
+            if (idA === idB) { showMessage('다른 채널을 선택하세요.'); return; }
+
+            const content = document.getElementById('channelCompareContent');
+            content.innerHTML = '<div class="loading"><div class="spinner"></div>비교 분석 중...</div>';
+
+            async function getChannelStats(channelId) {
+                const ch = trackedChannels.find(c => c.id === channelId);
+                const searchData = await callYouTubeAPI('search', { channelId, part: 'snippet', type: 'video', order: 'date', maxResults: 10 });
+                if (!searchData?.items?.length) return null;
+                const videoIds = searchData.items.map(v => v.id.videoId).join(',');
+                const videoData = await callYouTubeAPI('videos', { id: videoIds, part: 'snippet,statistics' });
+                if (!videoData?.items?.length) return null;
+                const videos = videoData.items;
+                const totalViews = videos.reduce((s, v) => s + (parseInt(v.statistics?.viewCount) || 0), 0);
+                const totalLikes = videos.reduce((s, v) => s + (parseInt(v.statistics?.likeCount) || 0), 0);
+                const totalComments = videos.reduce((s, v) => s + (parseInt(v.statistics?.commentCount) || 0), 0);
+                const avgViews = totalViews / videos.length;
+                const avgContribution = ch.subscriberCount > 0 ? (avgViews / ch.subscriberCount * 100) : 0;
+                const avgEngagement = totalViews > 0 ? ((totalLikes + totalComments) / totalViews * 100) : 0;
+                const dates = videos.map(v => new Date(v.snippet.publishedAt)).sort((a, b) => a - b);
+                let avgInterval = 0;
+                if (dates.length > 1) avgInterval = (dates[dates.length - 1] - dates[0]) / (1000 * 60 * 60 * 24) / (dates.length - 1);
+                const tagCount = {};
+                videos.forEach(v => (v.snippet.tags || []).forEach(tag => { tagCount[tag] = (tagCount[tag] || 0) + 1; }));
+                const topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                return { ch, avgViews, avgContribution, avgEngagement, avgInterval, topTags, totalViews, videos };
+            }
+
+            const [a, b] = await Promise.all([getChannelStats(idA), getChannelStats(idB)]);
+            if (!a || !b) { content.innerHTML = '<div class="empty-state">데이터를 가져올 수 없습니다.</div>'; return; }
+
+            function winBadge(valA, valB, higherIsWin = true) {
+                if (higherIsWin) return valA > valB ? '✅' : valA < valB ? '' : '➖';
+                return valA < valB ? '✅' : valA > valB ? '' : '➖';
+            }
+
+            content.innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+                    <div style="padding:16px;text-align:center;background:var(--bg-secondary);border-bottom:1px solid var(--border);border-right:1px solid var(--border);">
+                        <img src="${a.ch.thumbnail}" style="width:48px;height:48px;border-radius:50%;margin-bottom:8px;">
+                        <div style="font-weight:700;font-size:14px;">${a.ch.title}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">구독자 ${formatNumber(a.ch.subscriberCount)}</div>
+                    </div>
+                    <div style="padding:16px;text-align:center;background:var(--bg-secondary);border-bottom:1px solid var(--border);">
+                        <img src="${b.ch.thumbnail}" style="width:48px;height:48px;border-radius:50%;margin-bottom:8px;">
+                        <div style="font-weight:700;font-size:14px;">${b.ch.title}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">구독자 ${formatNumber(b.ch.subscriberCount)}</div>
+                    </div>
+                    ${[
+                        ['평균 조회수', formatNumber(Math.round(a.avgViews)), formatNumber(Math.round(b.avgViews)), a.avgViews, b.avgViews, true],
+                        ['기여도', a.avgContribution.toFixed(1) + '%', b.avgContribution.toFixed(1) + '%', a.avgContribution, b.avgContribution, true],
+                        ['참여도', a.avgEngagement.toFixed(2) + '%', b.avgEngagement.toFixed(2) + '%', a.avgEngagement, b.avgEngagement, true],
+                        ['업로드 주기', a.avgInterval > 0 ? a.avgInterval.toFixed(1) + '일' : '-', b.avgInterval > 0 ? b.avgInterval.toFixed(1) + '일' : '-', a.avgInterval, b.avgInterval, false],
+                    ].map(([label, dispA, dispB, valA, valB, higherWin]) => `
+                        <div style="padding:12px 16px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:var(--text-secondary);">${label}</span>
+                            <span style="font-weight:700;font-size:15px;">${dispA} ${winBadge(valA, valB, higherWin)}</span>
+                        </div>
+                        <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                            <span style="font-size:12px;color:var(--text-secondary);">${label}</span>
+                            <span style="font-weight:700;font-size:15px;">${dispB} ${winBadge(valB, valA, higherWin)}</span>
+                        </div>
+                    `).join('')}
+                    <div style="padding:12px 16px;border-right:1px solid var(--border);">
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">태그 TOP 5</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                            ${a.topTags.map(([t]) => `<span style="background:var(--bg-tertiary);padding:2px 8px;border-radius:10px;font-size:11px;">#${t}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div style="padding:12px 16px;">
+                        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">태그 TOP 5</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                            ${b.topTags.map(([t]) => `<span style="background:var(--bg-tertiary);padding:2px 8px;border-radius:10px;font-size:11px;">#${t}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 채널 추적 탭 초기화
+        function initTracking() {
+            renderTrackedChannels();
+            updateCompareSelects();
+            const lastCheck = localStorage.getItem('tracking_last_check');
+            if (lastCheck) {
+                document.getElementById('lastCheckTime').textContent = `마지막 확인: ${new Date(lastCheck).toLocaleString('ko-KR')}`;
+            }
+        }
+
+        // AI 분석용 프롬프트 복사
+        function copyAIAnalysisPrompt() {
+            if (!currentVideo) return;
+            const v = currentVideo;
+            const tags = v.tags?.length ? v.tags.join(', ') : '없음';
+            const desc = (v.description || '').substring(0, 300);
+            const contribVal = v.subscriberCount > 0 ? (v.viewCount / v.subscriberCount * 100).toFixed(1) : '?';
+
+            const prompt = `아래 유튜브 영상을 분석하고, 내 채널에 적용할 수 있는 인사이트를 알려줘.
+
+## 영상 정보
+- 제목: ${v.title}
+- 채널: ${v.channelTitle} (구독자 ${formatNumber(v.subscriberCount)})
+- 조회수: ${formatNumber(v.viewCount)} | 좋아요: ${formatNumber(v.likeCount)} | 댓글: ${formatNumber(v.commentCount)}
+- 기여도: ${contribVal}% (조회수÷구독자×100)
+- 게시일: ${formatDate(v.publishedAt)}
+- 태그: ${tags}
+- 설명 요약: ${desc}
+- 링크: https://youtube.com/watch?v=${v.id}
+
+## 분석 요청
+1. 이 영상이 잘 된 (또는 못 된) 이유 3가지
+2. 제목/썸네일/태그에서 배울 수 있는 SEO 전략
+3. 내 채널에 적용한다면 구체적으로 어떻게 변형할 수 있는지 3가지 제안
+4. 이 영상과 비슷한 주제로 만들 때 차별화 포인트`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                showModalToast('✅ AI 분석 프롬프트가 복사되었습니다! Claude 또는 ChatGPT에 붙여넣기 하세요.');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = prompt;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showModalToast('✅ 복사되었습니다!');
+            });
+        }
+
+        function showModalToast(message) {
+            const toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--success);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;z-index:10001;box-shadow:0 4px 12px rgba(0,0,0,0.3);animation:fadeIn 0.3s ease;';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; }, 2000);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // 채널 추적 입력에서 Enter 키 지원
+        document.getElementById('trackingChannelInput')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') addTrackedChannel();
+        });
+
+        // 초기화 시 호출
+        initTracking();
+
+        // 영상 검색 (개선된 버전 - 캐싱 포함)
+        async function searchVideos() {
+            const query = document.getElementById('videoSearchInput').value;
+            if (!query) {
+                showMessage('검색어를 입력해주세요.');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('videoResults');
+
+            // 캐시 확인
+            const cacheKey = `search_${query}`;
+            if (cachedSearches[cacheKey] && Date.now() - cachedSearches[cacheKey].timestamp < 24 * 60 * 60 * 1000) {
+                const cached = cachedSearches[cacheKey];
+                displayVideoResults(cached.searchItems, cached.videoItems, cached.channels);
+                showMessage('캐시된 결과를 표시합니다.', 'success');
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="loading"><div class="spinner"></div>검색 중...</div>';
+
+            const searchData = await callYouTubeAPI('search', {
+                q: query,
+                part: 'snippet',
+                type: 'video',
+                maxResults: 50,
+                order: 'relevance'
+            });
+
+            if (!searchData || !searchData.items) {
+                resultsDiv.innerHTML = '<div class="empty-state">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            // 배치로 비디오 상세 정보 가져오기
+            const videoIds = searchData.items.map(item => item.id.videoId).join(',');
+            const videoData = await callYouTubeAPI('videos', {
+                id: videoIds,
+                part: 'statistics,contentDetails,snippet'
+            });
+
+            // 배치로 채널 정보 가져오기
+            const channelIds = [...new Set(searchData.items.map(item => item.snippet.channelId))].join(',');
+            const channelData = await callYouTubeAPI('channels', {
+                id: channelIds,
+                part: 'statistics,snippet'
+            });
+
+            const channels = {};
+            if (channelData && channelData.items) {
+                channelData.items.forEach(channel => {
+                    channels[channel.id] = channel;
+                });
+            }
+
+            // 캐시 저장
+            cachedSearches[cacheKey] = {
+                timestamp: Date.now(),
+                searchItems: searchData.items,
+                videoItems: videoData?.items || [],
+                channels: channels
+            };
+            localStorage.setItem('cached_searches', JSON.stringify(cachedSearches));
+
+            // 결과 표시
+            displayVideoResults(searchData.items, videoData?.items || [], channels);
+        }
+    </script>
+</body>
+</html>
