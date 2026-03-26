@@ -10,7 +10,6 @@
 |------|------|
 | `index.html` | 유튜브 분석 도구 (뷰트랩 스타일) — 브라우저에서 바로 실행 |
 | `prompt-guide.md` | 프롬프트 가이드 — 오늘 실습에 사용한 모든 프롬프트 |
-| `auto-upload-script.md` | YouTube 자동 업로드 가이드 (Google Apps Script) |
 
 ---
 
